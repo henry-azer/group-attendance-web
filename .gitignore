@@ -3,3 +3,13 @@ node_modules/
 dist/
 .env
 docs/superpowers/
+
+# Vite / editor / OS
+dist-ssr/
+*.local
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
