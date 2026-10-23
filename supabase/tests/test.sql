@@ -425,6 +425,41 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- versioning with unchanged starts_on does not duplicate occurrences (incl. ended-today)
+-- ---------------------------------------------------------------------------
+do $$
+declare r jsonb; adm text; sh text; m uuid; e jsonb; v2 jsonb; v3 jsonb; h jsonb; dups int; base jsonb;
+begin
+  perform set_config('app.now', '2026-11-04 12:00:00+02', true);  -- Wed
+  r := public.create_group('Versioning', 'Africa/Cairo', array['Vee']);
+  adm := r->>'admin_code'; sh := r->>'share_code';
+  select id into m from public.members where group_id = (select id from public.groups where share_code = sh);
+  base := jsonb_build_object('title', 'Run', 'kind', 'weekly', 'starts_on', '2026-10-01',
+                             'weekdays', jsonb_build_array(5), 'start_time', '19:00');
+  e := public.admin_upsert_event(adm, base);
+  perform public.submit_response(sh, (e->>'id')::uuid, '2026-11-06', m, 'going', null);
+  -- time-only change, starts_on resent unchanged (no session today)
+  v2 := public.admin_upsert_event(adm, base || jsonb_build_object('id', e->>'id', 'start_time', '18:00'));
+  perform pg_temp.ok(v2->>'id' <> e->>'id' and v2->>'starts_on' = '2026-11-04',
+                     'new version starts the day after old ends_on: ' || v2::text);
+  -- ended-today case: Fri 11-06 20:00, the 18:00 session has started and has an answer path via attendance
+  perform set_config('app.now', '2026-11-06 20:00:00+02', true);
+  perform public.admin_mark_attendance(adm, (v2->>'id')::uuid, '2026-11-06', jsonb_build_array(jsonb_build_object('member_id', m, 'attended', true)));
+  v3 := public.admin_upsert_event(adm, base || jsonb_build_object('id', v2->>'id', 'start_time', '21:00'));
+  perform pg_temp.ok((select ends_on from public.events where id = (v2->>'id')::uuid) = '2026-11-06', 'old version ends today (started)');
+  perform pg_temp.ok(v3->>'starts_on' = '2026-11-07', 'newest version starts tomorrow: ' || v3::text);
+  perform pg_temp.ok(public.get_group_public(sh)->'sessions'->0->>'occurrence_date' = '2026-11-13', 'no second session today');
+  h := public.admin_get_history(adm, null);
+  select count(*) into dups from (
+    select o->>'series_id', o->>'occurrence_date' from jsonb_array_elements(h->'occurrences') o
+     group by 1, 2 having count(*) > 1) d;
+  perform pg_temp.ok(dups = 0, 'no (series_id, occurrence_date) appears twice in history: ' || (h->'occurrences')::text);
+  perform pg_temp.ok(jsonb_array_length(h->'occurrences') = 7, 'Fridays 10-02..11-13 listed once each: ' || jsonb_array_length(h->'occurrences'));
+  perform pg_temp.expect_err(format($q$select public.admin_mark_attendance(%L, %L, %L, '[]'::jsonb)$q$, adm, v3->>'id', '2026-10-30'),
+                             'invalid_input', 'newest version has no past dates to mark');
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- wrong code -> not_found
 -- ---------------------------------------------------------------------------
 do $$

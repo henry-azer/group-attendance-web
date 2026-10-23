@@ -447,7 +447,8 @@ end $$;
 -- p_event keys: title, location, kind, starts_on, weekdays, start_time, ends_on (+ id to edit).
 -- Edits: a schedule change (kind, starts_on, weekdays or start_time) on an event that already
 -- has responses or attendance ends the current row (ends_on = end_date_for, active = false)
--- and inserts a new row with the same series_id. Otherwise the row is edited in place.
+-- and inserts a new row with the same series_id, starting no earlier than the day after the
+-- old row's ends_on. Otherwise the row is edited in place.
 -- 'active' in p_event is ignored; use admin_end_event to end an event.
 create or replace function public.admin_upsert_event(p_admin text, p_event jsonb) returns jsonb
 language plpgsql volatile security definer set search_path = public, extensions, pg_temp as $$
@@ -462,6 +463,7 @@ declare
   v_start_time time;
   v_ends_on date;
   old public.events;
+  v_old_end date;
   e public.events;
 begin
   if p_event is null or jsonb_typeof(p_event) <> 'object' then raise exception 'invalid_input'; end if;
@@ -516,13 +518,13 @@ begin
       or old.weekdays is distinct from v_weekdays or old.start_time is distinct from v_start_time)
      and (exists (select 1 from public.responses where event_id = old.id)
           or exists (select 1 from public.attendance where event_id = old.id)) then
-    update public.events
-       set ends_on = least(coalesce(ends_on, public.end_date_for(old)), public.end_date_for(old)),
-           active = false
-     where id = old.id;
+    v_old_end := least(coalesce(old.ends_on, public.end_date_for(old)), public.end_date_for(old));
+    update public.events set ends_on = v_old_end, active = false where id = old.id;
+    -- The new version starts after the old one ends, so no (series_id, date) is generated
+    -- twice (the edit form usually resends the original starts_on).
     insert into public.events (group_id, series_id, title, location, kind, starts_on, weekdays,
                                start_time, ends_on, created_at)
-    values (g.id, old.series_id, v_title, v_location, v_kind, v_starts_on, v_weekdays,
+    values (g.id, old.series_id, v_title, v_location, v_kind, greatest(v_starts_on, v_old_end + 1), v_weekdays,
             v_start_time, v_ends_on, public.app_now())
     returning * into e;
   else
