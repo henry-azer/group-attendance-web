@@ -35,7 +35,12 @@ npm run db:migrate   # applies supabase/migrations/0001_init.sql
 npm run db:test       # runs supabase/tests/test.sql (expected to run inside a rollback transaction)
 ```
 
-Requires `psql` on your `PATH` and a valid `SUPABASE_DB_URL` in `.env`.
+Requires `psql` on your `PATH` and a valid `SUPABASE_DB_URL` in `.env`. The direct
+`db.<ref>.supabase.co` host is IPv6-only; on an IPv4-only network use the **Session pooler**
+connection string (Dashboard → Connect), user `postgres.<ref>`, port 5432.
+
+The migration is idempotent (safe to re-run). It can also be pasted into the Supabase SQL
+editor. `db:test` runs inside a transaction that ends in `ROLLBACK`, so it leaves no rows.
 
 ## Environment variables / secrets
 
