@@ -10,6 +10,7 @@ import {
   type AttendanceMark,
 } from '../../api/rpc.ts'
 import type { AdminMember, History, HistoryAttendance, HistoryOccurrence, HistoryResponse } from '../../domain/types.ts'
+import { formatSessionWhen } from '../../lib/format.ts'
 import { Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
 import { handleAdminNotFound, handleMutationNotFound } from './adminErrors.ts'
 
@@ -57,24 +58,6 @@ function pastOccurrencesNewestFirst(history: History): HistoryOccurrence[] {
     .filter((o) => new Date(o.starts_at).getTime() <= nowMs)
     .slice()
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())
-}
-
-function formatOccurrenceWhen(startsAtIso: string, tz: string): string {
-  const date = new Date(startsAtIso)
-  const dateLabel = new Intl.DateTimeFormat('en-GB', {
-    timeZone: tz,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
-  const timeLabel = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date)
-  return `${dateLabel} · ${timeLabel}`
 }
 
 function memberName(members: AdminMember[], id: string): string {
@@ -235,7 +218,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
               aria-expanded={expanded}
             >
               <span className="checkin-row__title">{event?.title ?? 'Session'}</span>
-              <span className="checkin-row__when">{formatOccurrenceWhen(occ.starts_at, tz)}</span>
+              <span className="checkin-row__when">{formatSessionWhen(occ.starts_at, tz, new Date())}</span>
               {occ.skipped ? (
                 <span className="checkin-badge checkin-badge--skipped">Skipped</span>
               ) : !occ.checked ? (
