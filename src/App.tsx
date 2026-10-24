@@ -4,6 +4,7 @@ import { CreatedPage } from './pages/CreatedPage.tsx'
 import { CreatePage } from './pages/CreatePage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { MemberPage } from './pages/MemberPage.tsx'
+import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 
 // Placeholder screen for routes that don't exist.
@@ -43,9 +44,11 @@ function App() {
   const { path, params } = useRoute()
 
   return (
-    <ToastProvider>
-      <Screen path={path} params={params} />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <Screen path={path} params={params} />
+      </ToastProvider>
+    </ErrorBoundary>
   )
 }
 

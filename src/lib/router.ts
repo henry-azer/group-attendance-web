@@ -49,7 +49,12 @@ export function matchRoute(hash: string): RouteMatch {
       const patternSegment = patternSegments[i]
       const pathSegment = pathSegments[i]
       if (patternSegment.startsWith(':')) {
-        params[patternSegment.slice(1)] = decodeURIComponent(pathSegment)
+        try {
+          params[patternSegment.slice(1)] = decodeURIComponent(pathSegment)
+        } catch {
+          // Malformed percent-encoding (e.g. '#/g/%E0%A4%A'): treat as an unknown route.
+          return NOT_FOUND
+        }
       } else if (patternSegment !== pathSegment) {
         matched = false
         break

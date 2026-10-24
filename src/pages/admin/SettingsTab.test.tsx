@@ -60,6 +60,16 @@ describe('SettingsTab', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
+  it('warns that a timezone change shifts past session times, only once it is changed', () => {
+    renderTab()
+    const note = 'Changing the timezone shifts the times of past sessions too.'
+    expect(screen.queryByText(note)).toBeFalsy()
+    fireEvent.change(screen.getByLabelText('Timezone'), { target: { value: 'UTC' } })
+    expect(screen.getByText(note)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Timezone'), { target: { value: 'Africa/Cairo' } })
+    expect(screen.queryByText(note)).toBeFalsy()
+  })
+
   it('requires a second tap to forget the admin code on this device', () => {
     renderTab()
 

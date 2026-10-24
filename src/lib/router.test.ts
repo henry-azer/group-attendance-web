@@ -22,6 +22,11 @@ describe('matchRoute', () => {
     expect(matchRoute('#/nope')).toEqual({ path: '/', params: {} })
   })
 
+  it('treats a malformed percent-encoded param as an unknown route', () => {
+    expect(() => matchRoute('#/g/%E0%A4%A')).not.toThrow()
+    expect(matchRoute('#/g/%E0%A4%A')).toEqual({ path: '/', params: {} })
+  })
+
   it('falls back to / for an empty hash', () => {
     expect(matchRoute('')).toEqual({ path: '/', params: {} })
   })

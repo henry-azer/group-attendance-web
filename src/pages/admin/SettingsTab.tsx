@@ -108,7 +108,13 @@ export function SettingsTab({ adminCode, group, onReload }: SettingsTabProps) {
             }}
           />
         </Field>
-        <Field label="Timezone" htmlFor="settings-timezone">
+        <Field
+          label="Timezone"
+          htmlFor="settings-timezone"
+          hint={
+            timezone !== group.timezone ? 'Changing the timezone shifts the times of past sessions too.' : undefined
+          }
+        >
           <select
             id="settings-timezone"
             className="input"
