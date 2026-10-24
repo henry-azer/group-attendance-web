@@ -1,0 +1,173 @@
+/* NamePicker + SessionCard — the member attendance page. Tokens only. */
+
+/* NamePicker: same pill-chip language as the Create page's weekday picker. */
+.name-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.name-picker__chip {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  padding: var(--space-3) var(--space-5);
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transform: scale(1);
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out);
+}
+
+.name-picker__chip:active {
+  transform: scale(0.97);
+}
+
+.name-picker__chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* SessionCard */
+.session-card {
+  margin-bottom: var(--space-5);
+}
+
+.session-card__headline {
+  margin-bottom: var(--space-2);
+}
+
+.session-card__event {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-2);
+}
+
+.session-card__no-session {
+  margin-bottom: 0;
+}
+
+.session-card__meta {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.session-card__when {
+  margin: 0 0 var(--space-6);
+  font-weight: var(--weight-medium);
+}
+
+.session-card__answers {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  transition: opacity var(--duration-ui) var(--ease-out);
+}
+
+.session-card__answers .btn {
+  flex: 1;
+  min-height: 48px;
+}
+
+.session-card__answers.is-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.session-card__note-field {
+  margin-bottom: var(--space-6);
+}
+
+.session-card__note-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.session-card__note-count {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.session-card__save-note {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  transition: opacity var(--duration-ui) var(--ease-out);
+}
+
+.session-card__save-note:active {
+  opacity: 0.7;
+}
+
+.session-card__save-note:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.session-card__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.session-card__group-title {
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-medium);
+  color: var(--ink-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.session-card__group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.session-card__group-empty {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.session-card__group-note {
+  color: var(--ink-muted);
+}
+
+/* MemberPage */
+.member-page__loading {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-9);
+}
+
+.member-page__sessions {
+  display: flex;
+  flex-direction: column;
+}

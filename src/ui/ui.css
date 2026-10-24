@@ -152,7 +152,7 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--space-5);
+  bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   align-items: center;

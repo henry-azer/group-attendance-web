@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '../ui/Toast.tsx'
 import { CreatePage, parseMemberNames } from './CreatePage.tsx'
 
@@ -36,10 +36,6 @@ function fillMembers(text: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-})
-
-afterEach(() => {
-  cleanup()
 })
 
 describe('parseMemberNames (re-export)', () => {

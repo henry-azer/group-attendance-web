@@ -14,6 +14,12 @@ body,
 
 html {
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  overscroll-behavior: none;
 }
 
 body {
@@ -28,6 +34,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+/* Native-feeling touch targets everywhere, not just the UI kit: instant tap (no 300ms delay or
+   double-tap zoom), no stuck text selection or long-press callout on controls. Hover is opt-in
+   per component, gated behind (hover: hover), so touch never gets a sticky :hover state. */
+button,
+a,
+[role='button'],
+[role='radio'] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 h1,
