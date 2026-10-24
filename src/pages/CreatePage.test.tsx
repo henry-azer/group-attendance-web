@@ -59,10 +59,10 @@ describe('CreatePage', () => {
     fillMembers(' Omar\n\nomar \n Ali')
 
     expect(screen.getByText('2 members')).toBeTruthy()
-    expect(screen.getByText(/repeated: omar/)).toBeTruthy()
+    expect(screen.getByText(/Fix duplicate name before creating: Omar/)).toBeTruthy()
   })
 
-  it('creates the group with deduped member names, stores the admin code and navigates to /created', async () => {
+  it('creates the group with the member names, stores the admin code and navigates to /created', async () => {
     vi.mocked(createGroup).mockResolvedValueOnce({
       ok: true,
       data: { share_code: 'SHARE123456', admin_code: 'ADMIN1234567890A' },
@@ -70,7 +70,7 @@ describe('CreatePage', () => {
 
     renderPage()
     fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
-    fillMembers('Omar\nomar\nAli')
+    fillMembers('Omar\nAli')
     fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
 
     await waitFor(() => expect(createGroup).toHaveBeenCalledWith(
@@ -84,6 +84,19 @@ describe('CreatePage', () => {
       adminCode: 'ADMIN1234567890A',
     })
     expect(navigate).toHaveBeenCalledWith('/created')
+  })
+
+  it('blocks submit and shows an error when member names are duplicated', async () => {
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
+    fillMembers('Omar\nomar\nAli')
+    fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
+
+    expect(
+      await screen.findByText('Each name must be unique: Omar appears twice. Add a last initial to tell them apart.'),
+    ).toBeTruthy()
+    expect(createGroup).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
   })
 
   it('also saves the first event when its title was filled in', async () => {
