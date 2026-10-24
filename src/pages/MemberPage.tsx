@@ -199,7 +199,15 @@ export function MemberPage({ shareCode }: MemberPageProps) {
     <div className="container screen member-page">
       <h1>{group.name}</h1>
 
-      <NamePicker members={group.members} selectedId={meId} onSelect={handleSelectMember} />
+      <p id="name-picker-label" className="member-page__name-picker-label">
+        Who are you?
+      </p>
+      <NamePicker
+        members={group.members}
+        selectedId={meId}
+        onSelect={handleSelectMember}
+        labelId="name-picker-label"
+      />
 
       {!hasUpcoming ? (
         <EmptyState

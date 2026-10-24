@@ -1,6 +1,14 @@
 /* NamePicker + SessionCard — the member attendance page. Tokens only. */
 
 /* NamePicker: same pill-chip language as the Create page's weekday picker. */
+.member-page__name-picker-label {
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-medium);
+  color: var(--ink-muted);
+  margin-bottom: var(--space-3);
+}
+
 .name-picker {
   display: flex;
   flex-wrap: wrap;
