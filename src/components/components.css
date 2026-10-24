@@ -192,6 +192,10 @@
   stroke-width: 1.5;
 }
 
+.headcount-bars__seg--baseline {
+  fill: var(--line-strong);
+}
+
 .headcount-bars__hit {
   cursor: default;
 }

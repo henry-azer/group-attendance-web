@@ -31,7 +31,10 @@ export function HeadcountBars({ sessions }: HeadcountBarsProps) {
   const maxExpected = Math.max(1, ...sessions.map((s) => s.expected))
   const plotHeight = CHART_HEIGHT - TOP_PADDING
   const viewBoxWidth = sessions.length * (BAR_WIDTH + BAR_GAP) + BAR_GAP
-  const hasUnchecked = sessions.some((s) => !s.checked)
+  // Only count a session toward the legend note if it would actually render the hatch overlay —
+  // a zero-expected session never does (see the per-session render below), so an unchecked session
+  // with nothing expected shouldn't claim "based on answers" when there's no hatch on the chart.
+  const hasUnchecked = sessions.some((s) => !s.checked && s.expected > 0)
 
   const scale = (count: number) => (count / maxExpected) * plotHeight
 
@@ -70,50 +73,67 @@ export function HeadcountBars({ sessions }: HeadcountBarsProps) {
 
           return (
             <g key={`${s.date}-${i}`}>
-              {s.came > 0 && (
+              {s.expected === 0 ? (
+                // Nothing was expected at this session — a hatched full-height bar here would
+                // read as "everyone missing", which is misleading. A thin baseline tick keeps the
+                // session's place in the x-axis without implying any headcount at all.
                 <rect
                   aria-hidden="true"
-                  className="headcount-bars__seg headcount-bars__seg--came"
+                  className="headcount-bars__seg headcount-bars__seg--baseline"
                   x={x}
-                  y={cameY}
+                  y={CHART_HEIGHT - 2}
                   width={BAR_WIDTH}
-                  height={cameHeight}
-                  rx={2}
+                  height={2}
+                  rx={1}
                 />
-              )}
-              {s.cant > 0 && (
-                <rect
-                  aria-hidden="true"
-                  className="headcount-bars__seg headcount-bars__seg--cant"
-                  x={x}
-                  y={cantY}
-                  width={BAR_WIDTH}
-                  height={cantHeight}
-                  rx={2}
-                />
-              )}
-              {s.noReply > 0 && (
-                <rect
-                  aria-hidden="true"
-                  className="headcount-bars__seg headcount-bars__seg--noreply"
-                  x={x + 1}
-                  y={noReplyY}
-                  width={BAR_WIDTH - 2}
-                  height={Math.max(noReplyHeight, 2)}
-                  rx={2}
-                />
-              )}
-              {!s.checked && (
-                <rect
-                  aria-hidden="true"
-                  className="headcount-bars__seg headcount-bars__seg--hatch"
-                  x={x}
-                  y={0}
-                  width={BAR_WIDTH}
-                  height={CHART_HEIGHT}
-                  fill="url(#headcount-hatch)"
-                  rx={2}
-                />
+              ) : (
+                <>
+                  {s.came > 0 && (
+                    <rect
+                      aria-hidden="true"
+                      className="headcount-bars__seg headcount-bars__seg--came"
+                      x={x}
+                      y={cameY}
+                      width={BAR_WIDTH}
+                      height={cameHeight}
+                      rx={2}
+                    />
+                  )}
+                  {s.cant > 0 && (
+                    <rect
+                      aria-hidden="true"
+                      className="headcount-bars__seg headcount-bars__seg--cant"
+                      x={x}
+                      y={cantY}
+                      width={BAR_WIDTH}
+                      height={cantHeight}
+                      rx={2}
+                    />
+                  )}
+                  {s.noReply > 0 && (
+                    <rect
+                      aria-hidden="true"
+                      className="headcount-bars__seg headcount-bars__seg--noreply"
+                      x={x + 1}
+                      y={noReplyY}
+                      width={BAR_WIDTH - 2}
+                      height={Math.max(noReplyHeight, 2)}
+                      rx={2}
+                    />
+                  )}
+                  {!s.checked && (
+                    <rect
+                      aria-hidden="true"
+                      className="headcount-bars__seg headcount-bars__seg--hatch"
+                      x={x}
+                      y={0}
+                      width={BAR_WIDTH}
+                      height={CHART_HEIGHT}
+                      fill="url(#headcount-hatch)"
+                      rx={2}
+                    />
+                  )}
+                </>
               )}
               <rect
                 role="img"

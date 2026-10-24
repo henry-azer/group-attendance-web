@@ -44,4 +44,27 @@ describe('HeadcountBars', () => {
     expect(screen.getByText('No past sessions yet')).toBeTruthy()
     expect(screen.queryAllByRole('img').length).toBe(0)
   })
+
+  it('renders no bar for a zero-expected session, and scales the y-axis off the other sessions', () => {
+    const sessions = buildSessions([
+      {},
+      { expected: 0, came: 0, cant: 0, noReply: 0, checked: false },
+    ]).slice(0, 2)
+    const { container } = render(<HeadcountBars sessions={sessions} />)
+
+    // No "came"/"cant"/"noreply"/hatch segment for the zero-expected session — only its baseline
+    // tick — while the real session (expected: 10) still gets its normal segments.
+    expect(container.querySelectorAll('.headcount-bars__seg--came').length).toBe(1)
+    expect(container.querySelectorAll('.headcount-bars__seg--hatch').length).toBe(0)
+    expect(container.querySelectorAll('.headcount-bars__seg--baseline').length).toBe(1)
+  })
+
+  it('omits the unchecked legend note when the only unchecked session has nothing expected', () => {
+    const sessions = buildSessions([
+      { checked: true },
+      { expected: 0, came: 0, cant: 0, noReply: 0, checked: false },
+    ]).slice(0, 2)
+    render(<HeadcountBars sessions={sessions} />)
+    expect(screen.queryByText(/based on answers/i)).toBeFalsy()
+  })
 })
