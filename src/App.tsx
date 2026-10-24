@@ -1,11 +1,12 @@
 import { useRoute } from './lib/router.ts'
+import { AdminLayout } from './pages/admin/AdminLayout.tsx'
 import { CreatedPage } from './pages/CreatedPage.tsx'
 import { CreatePage } from './pages/CreatePage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { MemberPage } from './pages/MemberPage.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 
-// Placeholder screens for routes that Tasks 7-8 implement.
+// Placeholder screen for routes that don't exist.
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="container screen">
@@ -32,7 +33,7 @@ function Screen({ path, params }: { path: string; params: Record<string, string>
     case '/a/events':
     case '/a/members':
     case '/a/settings':
-      return <Placeholder title="Admin — coming soon" />
+      return <AdminLayout />
     default:
       return <Placeholder title="Not found" />
   }

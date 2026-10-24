@@ -99,7 +99,7 @@ describe('CreatePage', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('also saves the first event when its title was filled in', async () => {
+  it('stages the optional first event and saves it once the group is created', async () => {
     vi.mocked(createGroup).mockResolvedValueOnce({
       ok: true,
       data: { share_code: 'SHARE123456', admin_code: 'ADMIN1234567890A' },
@@ -112,6 +112,10 @@ describe('CreatePage', () => {
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mon' }))
     fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add this session' }))
+
+    expect(await screen.findByText(/will be added once the group is created/)).toBeTruthy()
+
     fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
 
     await waitFor(() =>
@@ -128,14 +132,24 @@ describe('CreatePage', () => {
     expect(navigate).toHaveBeenCalledWith('/created')
   })
 
-  it('requires a weekday when the optional event is filled in as weekly', async () => {
+  it('requires a weekday before the optional event can be staged, and does not block group creation', async () => {
+    vi.mocked(createGroup).mockResolvedValueOnce({
+      ok: true,
+      data: { share_code: 'SHARE123456', admin_code: 'ADMIN1234567890A' },
+    })
+
     renderPage()
     fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
     fillMembers('Omar')
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
+    fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add this session' }))
 
     expect(await screen.findByText('Pick at least one day.')).toBeTruthy()
-    expect(createGroup).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
+
+    await waitFor(() => expect(createGroup).toHaveBeenCalled())
+    expect(adminUpsertEvent).not.toHaveBeenCalled()
   })
 })

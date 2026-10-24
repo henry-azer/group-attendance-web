@@ -54,3 +54,9 @@ export function clearAdminCode(): void {
   safeRemove(ADMIN_CODE_KEY, 'session')
   safeRemove(ADMIN_CODE_KEY, 'local')
 }
+
+// Whether "Remember on this device" is currently on, i.e. the code is mirrored to localStorage
+// (not just the always-on sessionStorage copy). Used by Settings to render the toggle's state.
+export function isAdminCodeRemembered(): boolean {
+  return safeGet(ADMIN_CODE_KEY, 'local') != null
+}
