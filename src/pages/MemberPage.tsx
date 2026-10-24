@@ -48,6 +48,26 @@ function withServerSession(group: PublicGroup, updated: Session): PublicGroup {
   }
 }
 
+// Undoes only this one member's answer for this one session — restoring their previous answer
+// (or removing it if they had none) — rather than reverting the whole group to a snapshot taken
+// at dispatch time. A wholesale revert would clobber anything a focus-triggered refetch brought
+// in while the submit was in flight (another member's answer, a changed note, a new occurrence).
+function withRolledBackAnswer(
+  group: PublicGroup,
+  eventId: string,
+  memberId: string,
+  previousAnswer: Answer | undefined,
+): PublicGroup {
+  return {
+    ...group,
+    sessions: group.sessions.map((session) => {
+      if (session.event.id !== eventId) return session
+      const withoutMember = session.answers.filter((a) => a.member_id !== memberId)
+      return { ...session, answers: previousAnswer ? [...withoutMember, previousAnswer] : withoutMember }
+    }),
+  }
+}
+
 // Soonest-first; events with no upcoming occurrence (starts_at null) sort last.
 function sortedSessions(sessions: Session[]): Session[] {
   return [...sessions].sort((a, b) => {
@@ -111,14 +131,15 @@ export function MemberPage({ shareCode }: MemberPageProps) {
     if (!session.occurrence_date) return
 
     const noteValue = note || null
-    const previousGroup = group
+    const eventId = session.event.id
+    const previousAnswer = session.answers.find((a) => a.member_id === meId)
     setGroup((current) =>
-      current ? withOptimisticAnswer(current, session.event.id, meId, nextStatus, noteValue) : current,
+      current ? withOptimisticAnswer(current, eventId, meId, nextStatus, noteValue) : current,
     )
 
     const result = await submitResponse({
       share: shareCode,
-      event: session.event.id,
+      event: eventId,
       date: session.occurrence_date,
       member: meId,
       status: nextStatus,
@@ -130,7 +151,9 @@ export function MemberPage({ shareCode }: MemberPageProps) {
         showToast("That session has started — here's the next one.", 'info')
         await load()
       } else {
-        setGroup(previousGroup)
+        setGroup((current) =>
+          current ? withRolledBackAnswer(current, eventId, meId, previousAnswer) : current,
+        )
         showToast("Couldn't save your answer. Try again.", 'error')
       }
       return

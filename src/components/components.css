@@ -87,6 +87,12 @@
   pointer-events: none;
 }
 
+.session-card__hint {
+  margin: calc(-1 * var(--space-3)) 0 var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
 .session-card__note-field {
   margin-bottom: var(--space-6);
 }

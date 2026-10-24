@@ -129,8 +129,18 @@ describe('SessionCard', () => {
       />,
     )
 
-    expect(screen.getByText('No upcoming session.')).toBeTruthy()
+    expect(screen.getByText('No upcoming session')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Going' })).toBeFalsy()
+  })
+
+  it('disables Going/Can\'t and shows a hint until a name is picked', () => {
+    render(<SessionCard session={buildSession()} members={members} meId={null} tz="Africa/Cairo" />)
+
+    const going = screen.getByRole('button', { name: 'Going' }) as HTMLButtonElement
+    const cant = screen.getByRole('button', { name: "Can't" }) as HTMLButtonElement
+    expect(going.disabled).toBe(true)
+    expect(cant.disabled).toBe(true)
+    expect(screen.getByText('Pick your name first')).toBeTruthy()
   })
 
   it('shows the "Are you coming" headline for a member, not for admin mode', () => {

@@ -77,7 +77,7 @@ export function SessionCard({
     return (
       <Card className="session-card">
         <h2 className="session-card__event">{event.title}</h2>
-        <p className="muted session-card__no-session">No upcoming session.</p>
+        <p className="muted session-card__no-session">No upcoming session</p>
       </Card>
     )
   }
@@ -98,6 +98,7 @@ export function SessionCard({
     .map((m) => ({ id: m.id, name: m.name }))
 
   const noteChanged = Boolean(myAnswer) && note.trim() !== (myAnswer?.note ?? '')
+  const answersDisabled = pending || !meId
 
   async function handleAnswer(status: Status) {
     if (!onAnswer || pending) return
@@ -137,6 +138,7 @@ export function SessionCard({
             <Button
               variant={myAnswer?.status === 'going' ? 'primary' : 'secondary'}
               aria-pressed={myAnswer?.status === 'going'}
+              disabled={answersDisabled}
               onClick={() => handleAnswer('going')}
             >
               Going
@@ -144,11 +146,13 @@ export function SessionCard({
             <Button
               variant={myAnswer?.status === 'cant' ? 'primary' : 'secondary'}
               aria-pressed={myAnswer?.status === 'cant'}
+              disabled={answersDisabled}
               onClick={() => handleAnswer('cant')}
             >
               Can't
             </Button>
           </div>
+          {!meId && <p className="session-card__hint">Pick your name first</p>}
 
           <div className="field session-card__note-field">
             <label className="field__label" htmlFor={`note-${event.id}`}>
