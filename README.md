@@ -9,7 +9,7 @@ hosted on GitHub Pages, backed by Supabase (Postgres + RPC, no custom server).
 - Vite + React + TypeScript, hash routing (`#/...`), plain CSS (no UI kit)
 - Supabase (Postgres, RLS, RPC functions) via `@supabase/supabase-js`
 - Vitest + Testing Library for tests
-- GitHub Actions: build/test/deploy to GitHub Pages, plus a weekly keep-alive ping
+- GitHub Actions: build/test/deploy to GitHub Pages, plus a twice-weekly keep-alive ping
 
 ## Local setup
 
@@ -59,5 +59,7 @@ RPC-only mutations.
 2. Add the two frontend secrets above under **Settings → Secrets and variables → Actions**.
 3. Push to `main` (or run the `Deploy to GitHub Pages` workflow manually) to build and deploy.
    Vite's `base` is set to `/group-attendance-web/` to match the Pages project path.
-4. The `Keep Supabase project alive` workflow runs weekly (and on demand) to call a trivial
-   `ping` RPC, since free Supabase projects pause after ~7 days of inactivity.
+4. The `Keep Supabase project alive` workflow runs twice a week (Mon and Thu, and on demand)
+   to call a trivial `ping` RPC, since free Supabase projects pause after ~7 days of inactivity.
+   Note: GitHub disables scheduled workflows in a repository with no activity for 60 days.
+   If that happens, re-enable it from the **Actions** tab (or push any commit).
