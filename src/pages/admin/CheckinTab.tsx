@@ -11,7 +11,7 @@ import {
 } from '../../api/rpc.ts'
 import type { AdminMember, History, HistoryAttendance, HistoryOccurrence, HistoryResponse } from '../../domain/types.ts'
 import { Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
-import { handleAdminNotFound } from './adminErrors.ts'
+import { handleAdminNotFound, handleMutationNotFound } from './adminErrors.ts'
 
 export interface CheckinTabProps {
   adminCode: string
@@ -107,6 +107,11 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
     load()
   }, [load])
 
+  async function handleRetry() {
+    setStatus('loading')
+    await load()
+  }
+
   if (status === 'loading') {
     return (
       <div className="admin-tab-loading">
@@ -120,7 +125,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
       <EmptyState
         title="Couldn't load the check-in history"
         description="Check your connection and try again."
-        action={<Button onClick={load}>Retry</Button>}
+        action={<Button onClick={handleRetry}>Retry</Button>}
       />
     )
   }
@@ -175,7 +180,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
     setSaving(false)
 
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, load)) return
       showToast("Couldn't save attendance. Try again.", 'error')
       return
     }
@@ -192,7 +197,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
     setUnskipping(null)
 
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, load)) return
       showToast("Couldn't unskip that session. Try again.", 'error')
       return
     }

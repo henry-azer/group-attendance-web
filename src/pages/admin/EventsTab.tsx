@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { adminEndEvent, adminUpsertEvent, type EventInput } from '../../api/rpc.ts'
 import type { AdminGroup, Event } from '../../domain/types.ts'
 import { Button, Card, EmptyState, useToast } from '../../ui/index.ts'
-import { handleAdminNotFound } from './adminErrors.ts'
+import { handleMutationNotFound } from './adminErrors.ts'
 import { EventForm } from './EventForm.tsx'
 
 export interface EventsTabProps {
@@ -57,7 +57,7 @@ export function EventsTab({ adminCode, group, onReload }: EventsTabProps) {
   async function saveEvent(input: EventInput) {
     const result = await adminUpsertEvent({ admin: adminCode, event: input })
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't save that event. Try again.", 'error')
       return
     }
@@ -72,7 +72,7 @@ export function EventsTab({ adminCode, group, onReload }: EventsTabProps) {
     setEndingId(null)
     setConfirmingEndId(null)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't end that event. Try again.", 'error')
       return
     }

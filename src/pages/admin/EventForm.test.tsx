@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Event } from '../../domain/types.ts'
-import { EventForm } from './EventForm.tsx'
+import { EventForm, type EventFormHandle } from './EventForm.tsx'
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -91,5 +92,64 @@ describe('EventForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onCancel).toHaveBeenCalled()
+  })
+
+  describe('embedded mode (no own Save/Cancel — the parent drives validation via ref)', () => {
+    it('renders no Save/Cancel button and hides the detail fields until a title is entered', () => {
+      const ref = createRef<EventFormHandle>()
+      render(<EventForm ref={ref} embedded />)
+
+      expect(screen.queryByRole('button', { name: /Save|Add/ })).toBeFalsy()
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeFalsy()
+      expect(screen.queryByLabelText('Time')).toBeFalsy()
+      expect(screen.queryByRole('button', { name: 'Mon' })).toBeFalsy()
+
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
+      expect(screen.getByLabelText('Time')).toBeTruthy()
+    })
+
+    it('validate() returns ok with a null event when left empty', () => {
+      const ref = createRef<EventFormHandle>()
+      render(<EventForm ref={ref} embedded />)
+
+      let result: ReturnType<NonNullable<typeof ref.current>['validate']> | undefined
+      act(() => {
+        result = ref.current?.validate()
+      })
+      expect(result).toEqual({ ok: true, event: null })
+    })
+
+    it('validate() returns ok:false and shows inline errors when filled in but invalid', () => {
+      const ref = createRef<EventFormHandle>()
+      render(<EventForm ref={ref} embedded />)
+
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
+      fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
+
+      let result: ReturnType<NonNullable<typeof ref.current>['validate']> | undefined
+      act(() => {
+        result = ref.current?.validate()
+      })
+      expect(result).toEqual({ ok: false })
+      expect(screen.getByText('Pick at least one day.')).toBeTruthy()
+    })
+
+    it('validate() returns the built EventInput when filled in and valid', () => {
+      const ref = createRef<EventFormHandle>()
+      render(<EventForm ref={ref} embedded />)
+
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Mon' }))
+      fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
+
+      let result: ReturnType<NonNullable<typeof ref.current>['validate']> | undefined
+      act(() => {
+        result = ref.current?.validate()
+      })
+      expect(result).toEqual({
+        ok: true,
+        event: expect.objectContaining({ title: 'Practice', weekdays: [1], start_time: '19:00' }),
+      })
+    })
   })
 })

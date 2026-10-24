@@ -99,7 +99,7 @@ describe('CreatePage', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('stages the optional first event and saves it once the group is created', async () => {
+  it('includes the optional first event automatically once it is filled in and valid', async () => {
     vi.mocked(createGroup).mockResolvedValueOnce({
       ok: true,
       data: { share_code: 'SHARE123456', admin_code: 'ADMIN1234567890A' },
@@ -112,10 +112,9 @@ describe('CreatePage', () => {
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mon' }))
     fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add this session' }))
 
-    expect(await screen.findByText(/will be added once the group is created/)).toBeTruthy()
-
+    // One primary action — no separate "stage the event" button to tap or forget.
+    expect(screen.queryByRole('button', { name: 'Add this session' })).toBeFalsy()
     fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
 
     await waitFor(() =>
@@ -132,7 +131,20 @@ describe('CreatePage', () => {
     expect(navigate).toHaveBeenCalledWith('/created')
   })
 
-  it('requires a weekday before the optional event can be staged, and does not block group creation', async () => {
+  it('blocks submission when the optional event is filled in but invalid (missing weekday)', async () => {
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
+    fillMembers('Omar')
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
+    fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
+
+    expect(await screen.findByText('Pick at least one day.')).toBeTruthy()
+    expect(createGroup).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('creates the group with no event when the optional section is left empty', async () => {
     vi.mocked(createGroup).mockResolvedValueOnce({
       ok: true,
       data: { share_code: 'SHARE123456', admin_code: 'ADMIN1234567890A' },
@@ -141,15 +153,10 @@ describe('CreatePage', () => {
     renderPage()
     fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
     fillMembers('Omar')
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Practice' } })
-    fireEvent.change(screen.getByLabelText('Time'), { target: { value: '19:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add this session' }))
-
-    expect(await screen.findByText('Pick at least one day.')).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
 
     await waitFor(() => expect(createGroup).toHaveBeenCalled())
     expect(adminUpsertEvent).not.toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith('/created')
   })
 })

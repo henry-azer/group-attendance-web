@@ -5,7 +5,7 @@ import { useState, type FormEvent } from 'react'
 import { adminDeactivateMember, adminUpsertMember } from '../../api/rpc.ts'
 import type { AdminGroup } from '../../domain/types.ts'
 import { Button, Card, EmptyState, Field, TextInput, useToast } from '../../ui/index.ts'
-import { handleAdminNotFound } from './adminErrors.ts'
+import { handleMutationNotFound } from './adminErrors.ts'
 
 export interface MembersTabProps {
   adminCode: string
@@ -31,7 +31,7 @@ function AddMemberForm({ adminCode, onReload }: { adminCode: string; onReload: (
     const result = await adminUpsertMember({ admin: adminCode, id: null, name: trimmed })
     setSubmitting(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       setError(result.error === 'duplicate_name' ? 'That name is already in the group.' : "Couldn't add that member. Try again.")
       return
     }
@@ -90,7 +90,7 @@ function MemberRow({ adminCode, member, onReload }: MemberRowProps) {
     const result = await adminUpsertMember({ admin: adminCode, id: member.id, name: trimmed })
     setSubmitting(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       setError(result.error === 'duplicate_name' ? 'That name is already in the group.' : "Couldn't rename. Try again.")
       return
     }
@@ -104,7 +104,7 @@ function MemberRow({ adminCode, member, onReload }: MemberRowProps) {
     const result = await adminDeactivateMember({ admin: adminCode, id: member.id })
     setSubmitting(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't remove that member. Try again.", 'error')
       return
     }

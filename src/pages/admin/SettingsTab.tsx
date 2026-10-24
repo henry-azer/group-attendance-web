@@ -6,7 +6,7 @@ import type { AdminGroup } from '../../domain/types.ts'
 import { navigate } from '../../lib/router.ts'
 import { clearAdminCode, getAdminCode, isAdminCodeRemembered, setAdminCode } from '../../lib/storage.ts'
 import { Button, Card, Field, TextInput, useToast } from '../../ui/index.ts'
-import { handleAdminNotFound } from './adminErrors.ts'
+import { handleMutationNotFound } from './adminErrors.ts'
 
 export interface SettingsTabProps {
   adminCode: string
@@ -42,6 +42,7 @@ export function SettingsTab({ adminCode, group, onReload }: SettingsTabProps) {
 
   const [codeRevealed, setCodeRevealed] = useState(false)
   const [remember, setRemember] = useState(() => isAdminCodeRemembered())
+  const [confirmingForget, setConfirmingForget] = useState(false)
   // The reveal reads straight from storage, per spec — it's what the device actually has saved,
   // not just the value this screen was handed.
   const storedAdminCode = getAdminCode() ?? adminCode
@@ -60,7 +61,7 @@ export function SettingsTab({ adminCode, group, onReload }: SettingsTabProps) {
     const result = await adminRenameGroup({ admin: adminCode, name: trimmed, timezone })
     setSaving(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't save those changes. Try again.", 'error')
       return
     }
@@ -170,9 +171,20 @@ export function SettingsTab({ adminCode, group, onReload }: SettingsTabProps) {
       <Card className="settings-card">
         <h2 className="settings-card__heading">This device</h2>
         <p className="muted">Removes the saved admin code from this browser. You'll need the code again to get back in.</p>
-        <Button variant="ghost" fullWidth onClick={handleForget}>
-          Forget on this device
-        </Button>
+        {confirmingForget ? (
+          <div className="settings-card__confirm">
+            <Button variant="secondary" fullWidth onClick={handleForget}>
+              Confirm forget
+            </Button>
+            <Button variant="ghost" fullWidth onClick={() => setConfirmingForget(false)}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button variant="ghost" fullWidth onClick={() => setConfirmingForget(true)}>
+            Forget on this device
+          </Button>
+        )}
       </Card>
     </div>
   )

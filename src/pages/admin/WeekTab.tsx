@@ -6,7 +6,7 @@ import { adminSetResponse, adminSkipOccurrence } from '../../api/rpc.ts'
 import { SessionCard } from '../../components/SessionCard.tsx'
 import type { AdminGroup, Session, Status } from '../../domain/types.ts'
 import { Button, Card, EmptyState, TextInput, useToast } from '../../ui/index.ts'
-import { handleAdminNotFound } from './adminErrors.ts'
+import { handleMutationNotFound } from './adminErrors.ts'
 
 export interface WeekTabProps {
   adminCode: string
@@ -48,7 +48,7 @@ function AnswerRow({ adminCode, session, member, onReload }: AnswerRowProps) {
     })
     setPending(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't update that answer. Try again.", 'error')
       return
     }
@@ -115,7 +115,7 @@ function SessionBlock({ adminCode, session, activeMembers, tz, onReload }: Sessi
     })
     setSubmitting(false)
     if (!result.ok) {
-      if (handleAdminNotFound(result.error, showToast)) return
+      if (handleMutationNotFound(result.error, showToast, onReload)) return
       showToast("Couldn't skip that session. Try again.", 'error')
       return
     }

@@ -108,6 +108,14 @@
   .admin-content {
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Toasts are rendered by the app-level ToastProvider, outside this file's reach, so they don't
+     know about the fixed bottom tab bar on their own. `:has()` lets this file alone keep them
+     clear of it — the moment the admin tab bar exists in the DOM — with no change to
+     AdminLayout.tsx or ToastProvider. */
+  body:has(.admin-tabs) .toast-viewport {
+    bottom: calc(var(--space-5) + 56px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* EventForm — shared by CreatePage, EventsTab (create + edit). */
@@ -225,8 +233,11 @@
 }
 
 .week-answer-row__option.is-cant {
-  background: var(--line-strong);
-  color: var(--surface);
+  /* --surface-on-line-strong text only reaches ~3.9:1 (light) / ~2.3:1 (dark) — fails AA for
+     small text. --danger/--danger-ink is an already-vetted pair (6.3:1+ in both themes, see
+     tokens.css) and reads correctly as "declined" rather than reusing the neutral border color. */
+  background: var(--danger);
+  color: var(--danger-ink);
 }
 
 .week-answer-row__option--clear:disabled {
@@ -395,6 +406,12 @@
   font-weight: var(--weight-medium);
   color: var(--ink-muted);
   margin-bottom: var(--space-2);
+}
+
+.settings-card__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .settings-remember {

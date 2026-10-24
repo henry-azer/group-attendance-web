@@ -9,8 +9,16 @@ vi.mock('../../api/rpc.ts', () => ({
   adminMarkAttendance: vi.fn(),
   adminUnskipOccurrence: vi.fn(),
 }))
+vi.mock('../../lib/router.ts', () => ({
+  navigate: vi.fn(),
+}))
+vi.mock('../../lib/storage.ts', () => ({
+  clearAdminCode: vi.fn(),
+}))
 
 import { adminGetHistory, adminMarkAttendance, adminUnskipOccurrence } from '../../api/rpc.ts'
+import { navigate } from '../../lib/router.ts'
+import { clearAdminCode } from '../../lib/storage.ts'
 
 function renderTab() {
   return render(
@@ -167,10 +175,70 @@ describe('CheckinTab', () => {
     await waitFor(() => expect(adminGetHistory).toHaveBeenCalledTimes(2))
   })
 
-  it('clears the stored admin code and goes home when the admin code is no longer valid', async () => {
+  it('clears the stored admin code and goes home when adminGetHistory says not_found', async () => {
     vi.mocked(adminGetHistory).mockResolvedValueOnce({ ok: false, error: 'not_found' })
     renderTab()
 
     expect(await screen.findByText('That admin code no longer works.')).toBeTruthy()
+    expect(clearAdminCode).toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith('/')
+  })
+
+  it('refreshes instead of logging out when adminMarkAttendance hits a stale not_found', async () => {
+    vi.mocked(adminGetHistory)
+      .mockResolvedValueOnce({ ok: true, data: buildHistory() })
+      .mockResolvedValueOnce({ ok: true, data: buildHistory() })
+    vi.mocked(adminMarkAttendance).mockResolvedValueOnce({ ok: false, error: 'not_found' })
+    renderTab()
+
+    const headers = await screen.findAllByRole('button', { name: /Practice/ })
+    const oct12 = headers.find((el) => (el.textContent ?? '').includes('12 Oct'))!
+    fireEvent.click(oct12)
+    await screen.findByText(memberAlice.name)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save attendance' }))
+
+    expect(await screen.findByText('That item changed — refreshing.')).toBeTruthy()
+    await waitFor(() => expect(adminGetHistory).toHaveBeenCalledTimes(2))
+    expect(clearAdminCode).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('refreshes instead of logging out when adminUnskipOccurrence hits a stale not_found', async () => {
+    vi.mocked(adminGetHistory)
+      .mockResolvedValueOnce({ ok: true, data: buildHistory() })
+      .mockResolvedValueOnce({ ok: true, data: buildHistory() })
+    vi.mocked(adminUnskipOccurrence).mockResolvedValueOnce({ ok: false, error: 'not_found' })
+    renderTab()
+
+    await screen.findByText('Skipped')
+    fireEvent.click(screen.getByRole('button', { name: 'Unskip' }))
+
+    expect(await screen.findByText('That item changed — refreshing.')).toBeTruthy()
+    await waitFor(() => expect(adminGetHistory).toHaveBeenCalledTimes(2))
+    expect(clearAdminCode).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('Retry goes back to the loading state while refetching', async () => {
+    let resolveRetry!: (value: { ok: true; data: ReturnType<typeof buildHistory> }) => void
+    vi.mocked(adminGetHistory)
+      .mockResolvedValueOnce({ ok: false, error: 'network' })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveRetry = resolve
+        }) as ReturnType<typeof adminGetHistory>,
+      )
+    renderTab()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }))
+
+    // The retry is in flight (its promise hasn't resolved yet) — the error EmptyState must have
+    // already been replaced by the loading spinner, not still showing stale error content.
+    expect(await screen.findByText('Loading sessions')).toBeTruthy()
+    expect(screen.queryByText("Couldn't load the check-in history")).toBeFalsy()
+
+    resolveRetry({ ok: true, data: buildHistory() })
+    await screen.findByText('Skipped')
   })
 })

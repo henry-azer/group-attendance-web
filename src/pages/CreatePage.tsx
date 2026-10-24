@@ -1,9 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import { adminUpsertEvent, createGroup, type EventInput } from '../api/rpc.ts'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { adminUpsertEvent, createGroup } from '../api/rpc.ts'
 import { parseMemberNames } from '../domain/names.ts'
 import { navigate } from '../lib/router.ts'
 import { setAdminCode } from '../lib/storage.ts'
-import { EventForm } from './admin/EventForm.tsx'
+import { EventForm, type EventFormHandle } from './admin/EventForm.tsx'
 import { Button, Card, Field, TextArea, TextInput, useToast } from '../ui/index.ts'
 import { setCreatedGroup } from './createdGroupStore.ts'
 
@@ -54,7 +54,7 @@ export function CreatePage() {
   const [name, setName] = useState('')
   const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone)
   const [membersText, setMembersText] = useState('')
-  const [stagedEvent, setStagedEvent] = useState<EventInput | null>(null)
+  const eventFormRef = useRef<EventFormHandle>(null)
   const [errors, setErrors] = useState<FormErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -78,8 +78,14 @@ export function CreatePage() {
       nextErrors.members = 'Names must be 60 characters or fewer.'
     }
 
+    // Validates the optional event section too (EventForm shows its own inline field errors as a
+    // side effect) so "Create group" is the only action needed — and so Enter inside an event
+    // field can't quietly submit the group without it, the way a separate "Add this session"
+    // button used to allow.
+    const eventResult = eventFormRef.current?.validate() ?? { ok: true, event: null }
+
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0) return
+    if (Object.keys(nextErrors).length > 0 || !eventResult.ok) return
 
     setFormError(null)
     setSubmitting(true)
@@ -109,9 +115,9 @@ export function CreatePage() {
 
     const { share_code, admin_code } = result.data
 
-    if (stagedEvent) {
-      const eventResult = await adminUpsertEvent({ admin: admin_code, event: stagedEvent })
-      if (!eventResult.ok) {
+    if (eventResult.event) {
+      const createEventResult = await adminUpsertEvent({ admin: admin_code, event: eventResult.event })
+      if (!createEventResult.ok) {
         showToast("Group created, but the first session couldn't be saved. Add it from Admin.", 'error')
       }
     }
@@ -175,16 +181,7 @@ export function CreatePage() {
 
         <Card className="event-card">
           <h2 className="event-card__heading">First session (optional)</h2>
-          {stagedEvent ? (
-            <div className="event-card__staged">
-              <p className="event-card__staged-summary">"{stagedEvent.title}" will be added once the group is created.</p>
-              <Button variant="ghost" onClick={() => setStagedEvent(null)}>
-                Remove
-              </Button>
-            </div>
-          ) : (
-            <EventForm submitLabel="Add this session" onSubmit={async (input) => setStagedEvent(input)} />
-          )}
+          <EventForm ref={eventFormRef} embedded />
         </Card>
 
         {formError && (
