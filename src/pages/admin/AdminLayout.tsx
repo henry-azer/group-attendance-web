@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { adminGetGroup } from '../../api/rpc.ts'
+import { loadErrorHint, type ApiError } from '../../api/errors.ts'
 import type { AdminGroup } from '../../domain/types.ts'
 import { navigate, useRoute } from '../../lib/router.ts'
 import { getAdminCode } from '../../lib/storage.ts'
@@ -114,12 +115,14 @@ export function AdminLayout() {
   const [adminCode] = useState(() => getAdminCode())
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [group, setGroup] = useState<AdminGroup | null>(null)
+  const [loadError, setLoadError] = useState<ApiError | null>(null)
 
   const load = useCallback(async () => {
     if (!adminCode) return
     const result = await adminGetGroup(adminCode)
     if (!result.ok) {
       if (handleAdminNotFound(result.error, showToast)) return
+      setLoadError(result.error)
       setStatus('error')
       return
     }
@@ -178,7 +181,7 @@ export function AdminLayout() {
         {status === 'error' && (
           <EmptyState
             title="Couldn't load this group"
-            description="Check your connection and try again."
+            description={loadErrorHint(loadError)}
             action={<Button onClick={handleRetry}>Retry</Button>}
           />
         )}

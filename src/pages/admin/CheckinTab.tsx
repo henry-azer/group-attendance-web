@@ -9,6 +9,7 @@ import {
   adminUnskipOccurrence,
   type AttendanceMark,
 } from '../../api/rpc.ts'
+import { loadErrorHint, type ApiError } from '../../api/errors.ts'
 import type { AdminMember, History, HistoryAttendance, HistoryOccurrence, HistoryResponse } from '../../domain/types.ts'
 import { formatSessionWhen } from '../../lib/format.ts'
 import { Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
@@ -68,6 +69,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
   const { showToast } = useToast()
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [history, setHistory] = useState<History | null>(null)
+  const [loadError, setLoadError] = useState<ApiError | null>(null)
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [marks, setMarks] = useState<Record<string, boolean>>({})
   const [othersOpen, setOthersOpen] = useState(false)
@@ -78,6 +80,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
     const result = await adminGetHistory(adminCode)
     if (!result.ok) {
       if (handleAdminNotFound(result.error, showToast)) return
+      setLoadError(result.error)
       setStatus('error')
       return
     }
@@ -107,7 +110,7 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
     return (
       <EmptyState
         title="Couldn't load the check-in history"
-        description="Check your connection and try again."
+        description={loadErrorHint(loadError)}
         action={<Button onClick={handleRetry}>Retry</Button>}
       />
     )

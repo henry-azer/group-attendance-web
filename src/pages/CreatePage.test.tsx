@@ -86,6 +86,22 @@ describe('CreatePage', () => {
     expect(navigate).toHaveBeenCalledWith('/created')
   })
 
+  it.each([
+    ['rate_limited', 'Too many groups are being created right now. Try again in a minute.'],
+    ['server', 'Something went wrong on our side. Try again.'],
+    ['network', "Couldn't reach the server. Check your connection and try again."],
+  ] as const)('shows friendly copy when create_group fails with %s', async (error, message) => {
+    vi.mocked(createGroup).mockResolvedValueOnce({ ok: false, error })
+
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })
+    fillMembers('Omar\nAli')
+    fireEvent.click(screen.getByRole('button', { name: 'Create group' }))
+
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
   it('blocks submit and shows an error when member names are duplicated', async () => {
     renderPage()
     fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Friday Futsal' } })

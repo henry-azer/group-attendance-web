@@ -2,6 +2,7 @@
 // tap Going/Can't. No sign-in, nothing to install.
 import { useCallback, useEffect, useState } from 'react'
 import { getGroupPublic, submitResponse } from '../api/rpc.ts'
+import { type ApiError } from '../api/errors.ts'
 import { NamePicker } from '../components/NamePicker.tsx'
 import { SessionCard } from '../components/SessionCard.tsx'
 import type { Answer, PublicGroup, Session, Status } from '../domain/types.ts'
@@ -83,10 +84,12 @@ export function MemberPage({ shareCode }: MemberPageProps) {
   const [status, setStatus] = useState<LoadStatus>('loading')
   const [group, setGroup] = useState<PublicGroup | null>(null)
   const [meId, setMeId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<ApiError | null>(null)
 
   const load = useCallback(async () => {
     const result = await getGroupPublic(shareCode)
     if (!result.ok) {
+      setLoadError(result.error)
       setStatus(result.error === 'not_found' ? 'not_found' : 'error')
       return
     }
@@ -186,7 +189,11 @@ export function MemberPage({ shareCode }: MemberPageProps) {
       <div className="container screen">
         <EmptyState
           title="Couldn't load this group"
-          description="Check your connection and reload the page."
+          description={
+            loadError === 'network'
+              ? 'Check your connection and reload the page.'
+              : 'Something went wrong on our side. Reload the page to try again.'
+          }
         />
       </div>
     )

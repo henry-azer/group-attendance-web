@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { adminUpsertEvent, createGroup } from '../api/rpc.ts'
+import { API_ERROR_MESSAGES } from '../api/errors.ts'
 import { parseMemberNames } from '../domain/names.ts'
 import { navigate } from '../lib/router.ts'
 import { setAdminCode } from '../lib/storage.ts'
@@ -105,8 +106,8 @@ export function CreatePage() {
         setFormError(
           'Each name must be unique. Two or more members have the same name — add a last initial to tell them apart.',
         )
-      } else if (result.error === 'network') {
-        setFormError("Couldn't reach the server. Check your connection and try again.")
+      } else if (result.error === 'network' || result.error === 'server' || result.error === 'rate_limited') {
+        setFormError(API_ERROR_MESSAGES[result.error])
       } else {
         setFormError('Something about that form was invalid. Double-check it and try again.')
       }
