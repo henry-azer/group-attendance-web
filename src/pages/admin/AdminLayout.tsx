@@ -9,6 +9,7 @@ import { Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
 import { handleAdminNotFound } from './adminErrors.ts'
 import { CheckinTab } from './CheckinTab.tsx'
 import { EventsTab } from './EventsTab.tsx'
+import { InsightsTab } from './InsightsTab.tsx'
 import { MembersTab } from './MembersTab.tsx'
 import { SettingsTab } from './SettingsTab.tsx'
 import { WeekTab } from './WeekTab.tsx'
@@ -103,12 +104,7 @@ export function AdminLayout() {
           <>
             {tab === 'week' && <WeekTab adminCode={adminCode} group={group} onReload={load} />}
             {tab === 'checkin' && <CheckinTab adminCode={adminCode} tz={group.timezone} />}
-            {tab === 'insights' && (
-              <EmptyState
-                title="Insights are coming soon"
-                description="Attendance trends, reliability and streaks will show up here."
-              />
-            )}
+            {tab === 'insights' && <InsightsTab adminCode={adminCode} groupName={group.name} />}
             {tab === 'events' && <EventsTab adminCode={adminCode} group={group} onReload={load} />}
             {tab === 'members' && <MembersTab adminCode={adminCode} group={group} onReload={load} />}
             {tab === 'settings' && <SettingsTab adminCode={adminCode} group={group} onReload={load} />}

@@ -20,6 +20,14 @@
  *
  * `--danger` and `--ink-muted` are additions beyond the spec'd palette (needed for form errors
  * and secondary text); both were derived from the warm palette and checked the same way.
+ *
+ * `--cant` (added for Insights charts, task 8) is a muted warm tone for the "can't" series in the
+ * headcount chart — distinct from `--accent` (came) and `--danger` (reserved for error/unchecked
+ * badges), checked as a non-text graphical element (WCAG 1.4.11, 3:1 minimum) against both `--bg`
+ * and `--surface`:
+ *   light  --cant #b2652e : 4.14:1 vs --bg, 4.38:1 vs --surface
+ *   dark   --cant #d9a873 : 8.17:1 vs --bg, 7.48:1 vs --surface
+ *
  * Measured contrast ratios (WCAG relative luminance):
  *   light  ink/bg 14.4:1 · accent-ink/accent 6.3:1 · ink-muted/bg 5.8:1 · danger/bg 6.2:1
  *   dark   ink/bg 14.3:1 · accent-ink/accent 7.4:1 · accent/bg 8.0:1 · ink-muted/bg 7.7:1 · danger/bg 6.8:1
@@ -39,6 +47,7 @@
   --accent-ink: #ffffff;
   --danger: #b3261e;
   --danger-ink: #ffffff;
+  --cant: #b2652e;
   --shadow-float: 0 8px 24px -4px rgba(42, 36, 32, 0.18);
 
   /* Type */
@@ -105,6 +114,7 @@
     --accent-ink: #10241a;
     --danger: #e5897a;
     --danger-ink: #10241a;
+    --cant: #d9a873;
     --shadow-float: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
   }
 }
@@ -121,5 +131,6 @@
   --accent-ink: #10241a;
   --danger: #e5897a;
   --danger-ink: #10241a;
+  --cant: #d9a873;
   --shadow-float: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
 }

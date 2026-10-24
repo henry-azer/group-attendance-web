@@ -79,3 +79,33 @@ export function sessionHeadline(label: string): string {
   if (label === 'today' || label === 'tomorrow') return `Are you coming ${label}?`
   return `Are you coming this ${label}?`
 }
+
+/** e.g. "Fri 24 Oct" for a plain 'YYYY-MM-DD' occurrence date (Insights charts/tables). The date's
+ * own calendar components decide the weekday — formatted in UTC so the host's local timezone can
+ * never shift it by a day, matching how `computeInsights` reads the same date strings. */
+export function formatInsightDateLabel(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'UTC',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).formatToParts(date)
+  const byType: Record<string, string> = {}
+  for (const part of parts) {
+    if (part.type !== 'literal') byType[part.type] = part.value
+  }
+  return `${byType.weekday} ${byType.day} ${byType.month}`
+}
+
+/** "Answers arrive ~X h before start" (or "~X days before start" at 48h+). `null` means hide it. */
+export function formatAvgLeadTime(avgLeadHours: number | null): string | null {
+  if (avgLeadHours == null) return null
+  if (avgLeadHours >= 48) {
+    const days = Math.round(avgLeadHours / 24)
+    return `Answers arrive ~${days} day${days === 1 ? '' : 's'} before start`
+  }
+  const hours = Math.round(avgLeadHours)
+  return `Answers arrive ~${hours} h before start`
+}
