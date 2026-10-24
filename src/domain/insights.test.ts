@@ -116,4 +116,18 @@ describe('computeInsights', () => {
     expect(insights.avgLeadHours as number).toBeCloseTo(55.473684210526315, 5)
     expect(insights.uncheckedCount).toBe(3)
   })
+
+  it('leaves sessions nobody was expected at out of the percentage averages', () => {
+    const h = buildHistory()
+    // Before anyone joined (members joined 2026-08-01 or later): expected === 0.
+    h.occurrences.push(
+      { event_id: 'event-practice', series_id: seriesId, occurrence_date: '2026-07-27', starts_at: '2026-07-27T18:00:00Z', skipped: false, checked: false },
+      { event_id: 'event-practice', series_id: seriesId, occurrence_date: '2026-07-28', starts_at: '2026-07-28T18:00:00Z', skipped: false, checked: false },
+    )
+    const insights = computeInsights(h, seriesId, { lastN: null, now })
+    expect(insights.sessions.length).toBe(8)
+    expect(insights.sessions.slice(0, 2).map((s) => s.expected)).toEqual([0, 0])
+    expect(insights.avgAttendancePct).toBe(81)
+    expect(insights.byWeekday).toEqual([{ weekday: 1, pct: 81, sessions: 6 }])
+  })
 })

@@ -99,16 +99,21 @@ export function computeInsights(h: History, seriesId: string, opts: { lastN: num
 
   let avgAttendancePct = 0
   let avgHeadcount = 0
+  // Sessions nobody was expected at (e.g. before anyone joined) have no meaningful rate, so they
+  // stay in the sessions list but are left out of percentage averages.
+  const rated = sessions.filter((s) => s.expected > 0)
+  if (rated.length > 0) {
+    const pctSum = rated.reduce((sum, s) => sum + (s.came / s.expected) * 100, 0)
+    avgAttendancePct = round(pctSum / rated.length)
+  }
   if (sessions.length > 0) {
-    const pctSum = sessions.reduce((sum, s) => sum + (s.expected > 0 ? (s.came / s.expected) * 100 : 0), 0)
-    avgAttendancePct = round(pctSum / sessions.length)
     avgHeadcount = sessions.reduce((sum, s) => sum + s.came, 0) / sessions.length
   }
 
   const weekdayGroups = new Map<number, number[]>()
-  for (const s of sessions) {
+  for (const s of rated) {
     const wd = weekdayOf(s.date)
-    const pct = s.expected > 0 ? (s.came / s.expected) * 100 : 0
+    const pct = (s.came / s.expected) * 100
     const list = weekdayGroups.get(wd)
     if (list) list.push(pct)
     else weekdayGroups.set(wd, [pct])

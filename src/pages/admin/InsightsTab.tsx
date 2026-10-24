@@ -2,6 +2,7 @@
 // reliability/streaks, who's slipping, response timing, and a CSV export of every response.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { adminGetHistory } from '../../api/rpc.ts'
+import { loadErrorHint, type ApiError } from '../../api/errors.ts'
 import { HeadcountBars } from '../../components/charts/HeadcountBars.tsx'
 import { Meter } from '../../components/charts/Meter.tsx'
 import { toCsv } from '../../domain/csv.ts'
@@ -102,7 +103,8 @@ function slugify(name: string): string {
 
 function downloadCsv(history: History, groupName: string) {
   const csv = toCsv(history)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  // The BOM makes Excel open the file as UTF-8 (names with accents or non-Latin scripts).
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -110,13 +112,15 @@ function downloadCsv(history: History, groupName: string) {
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  // Some browsers start the download asynchronously; revoking right away can cancel it.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
   const { showToast } = useToast()
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [history, setHistory] = useState<History | null>(null)
+  const [loadError, setLoadError] = useState<ApiError | null>(null)
   const [seriesId, setSeriesId] = useState<string | null>(null)
   const [range, setRange] = useState<RangeKey>('last12')
   const [sortKey, setSortKey] = useState<SortKey>('pct')
@@ -126,6 +130,7 @@ export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
     const result = await adminGetHistory(adminCode)
     if (!result.ok) {
       if (handleAdminNotFound(result.error, showToast)) return
+      setLoadError(result.error)
       setStatus('error')
       return
     }
@@ -162,7 +167,7 @@ export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
     return (
       <EmptyState
         title="Couldn't load insights"
-        description="Check your connection and try again."
+        description={loadErrorHint(loadError)}
         action={
           <Button
             onClick={() => {

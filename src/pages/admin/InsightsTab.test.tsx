@@ -84,15 +84,25 @@ describe('InsightsTab', () => {
     renderTab()
     await screen.findByText('Avg attendance')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Download CSV' }))
+    vi.useFakeTimers()
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Download CSV' }))
 
-    expect(createObjectURL).toHaveBeenCalledTimes(1)
-    const blob = createObjectURL.mock.calls[0][0] as Blob
-    expect(blob.type).toContain('text/csv')
-    expect(clickSpy).toHaveBeenCalledTimes(1)
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock')
-
-    clickSpy.mockRestore()
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      const blob = createObjectURL.mock.calls[0][0] as Blob
+      expect(blob.type).toContain('text/csv')
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+      // Revoked later, so the browser has time to start the download.
+      expect(revokeObjectURL).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1000)
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock')
+      // UTF-8 BOM first, so Excel reads non-ASCII names correctly.
+      const bytes = new Uint8Array(await blob.arrayBuffer())
+      expect(Array.from(bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf])
+    } finally {
+      vi.useRealTimers()
+      clickSpy.mockRestore()
+    }
   })
 
   it('shows "No events yet" when the group has no events', async () => {
@@ -125,6 +135,14 @@ describe('InsightsTab', () => {
     expect(screen.getByText('81%', { selector: '.insights-stat__value' })).toBeTruthy()
     expect(screen.queryByText('No events yet')).toBeFalsy()
     expect(adminGetHistory).toHaveBeenCalledTimes(2)
+  })
+
+  it('blames the connection only for network errors, not server errors', async () => {
+    vi.mocked(adminGetHistory).mockResolvedValueOnce({ ok: false, error: 'server' })
+    renderTab()
+    await screen.findByText("Couldn't load insights")
+    expect(screen.getByText('Something went wrong on our side. Try again.')).toBeTruthy()
+    expect(screen.queryByText(/Check your connection/)).toBeFalsy()
   })
 
   it('updates the stats when the series picker is switched to a different series', async () => {
