@@ -1,8 +1,11 @@
 import { useRoute } from './lib/router.ts'
+import { CreatedPage } from './pages/CreatedPage.tsx'
+import { CreatePage } from './pages/CreatePage.tsx'
+import { HomePage } from './pages/HomePage.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 
-// Placeholder screens for routes that Tasks 5-8 implement. Kept intentionally thin: this task
-// only wires up routing, the API client and the design system.
+// Placeholder screens for routes that Tasks 6-8 implement. Kept intentionally thin: this task
+// only wires up the member page, routing, the API client and the design system.
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="container screen">
@@ -15,11 +18,11 @@ function Placeholder({ title }: { title: string }) {
 function Screen({ path, params }: { path: string; params: Record<string, string> }) {
   switch (path) {
     case '/':
-      return <Placeholder title="Home — coming soon" />
+      return <HomePage />
     case '/new':
-      return <Placeholder title="Create a group — coming soon" />
+      return <CreatePage />
     case '/created':
-      return <Placeholder title="Group created — coming soon" />
+      return <CreatedPage />
     case '/g/:shareCode':
       return <Placeholder title={`Group ${params.shareCode} — coming soon`} />
     case '/a':
