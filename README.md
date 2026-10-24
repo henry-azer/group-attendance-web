@@ -31,7 +31,7 @@ These apply the SQL migration and test suite directly against the Supabase Postg
 using `psql`, with environment variables loaded from `.env` via `dotenv-cli`:
 
 ```bash
-npm run db:migrate   # applies supabase/migrations/0001_init.sql
+npm run db:migrate   # applies every supabase/migrations/*.sql in order (0001, 0002, ...)
 npm run db:test       # runs supabase/tests/test.sql (expected to run inside a rollback transaction)
 ```
 
@@ -39,8 +39,8 @@ Requires `psql` on your `PATH` and a valid `SUPABASE_DB_URL` in `.env`. The dire
 `db.<ref>.supabase.co` host is IPv6-only; on an IPv4-only network use the **Session pooler**
 connection string (Dashboard → Connect), user `postgres.<ref>`, port 5432.
 
-The migration is idempotent (safe to re-run). It can also be pasted into the Supabase SQL
-editor. `db:test` runs inside a transaction that ends in `ROLLBACK`, so it leaves no rows.
+Each migration is idempotent, so re-running all of them is safe. They can also be pasted into
+the Supabase SQL editor, in file-name order. `db:test` runs inside a transaction that ends in `ROLLBACK`, so it leaves no rows.
 
 ## Environment variables / secrets
 

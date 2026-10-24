@@ -438,6 +438,8 @@ begin
                              'weekdays', jsonb_build_array(5), 'start_time', '19:00');
   e := public.admin_upsert_event(adm, base);
   perform public.submit_response(sh, (e->>'id')::uuid, '2026-11-06', m, 'going', null);
+  -- past attendance is what makes the schedule edit version the event
+  perform public.admin_mark_attendance(adm, (e->>'id')::uuid, '2026-10-30', jsonb_build_array(jsonb_build_object('member_id', m, 'attended', true)));
   -- time-only change, starts_on resent unchanged (no session today)
   v2 := public.admin_upsert_event(adm, base || jsonb_build_object('id', e->>'id', 'start_time', '18:00'));
   perform pg_temp.ok(v2->>'id' <> e->>'id' and v2->>'starts_on' = '2026-11-04',
@@ -457,6 +459,171 @@ begin
   perform pg_temp.ok(jsonb_array_length(h->'occurrences') = 7, 'Fridays 10-02..11-13 listed once each: ' || jsonb_array_length(h->'occurrences'));
   perform pg_temp.expect_err(format($q$select public.admin_mark_attendance(%L, %L, %L, '[]'::jsonb)$q$, adm, v3->>'id', '2026-10-30'),
                              'invalid_input', 'newest version has no past dates to mark');
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- versioning carries upcoming answers: (c) ended-today + (a) time-only change
+-- ---------------------------------------------------------------------------
+do $$
+declare r jsonb; adm text; sh text; m uuid; e jsonb; v2 jsonb; s jsonb; base jsonb;
+begin
+  perform set_config('app.now', '2026-11-06 10:00:00+02', true);  -- Fri morning
+  r := public.create_group('Carry', 'Africa/Cairo', array['Cee']);
+  adm := r->>'admin_code'; sh := r->>'share_code';
+  select id into m from public.members where group_id = (select id from public.groups where share_code = sh);
+  base := jsonb_build_object('title', 'Gym', 'kind', 'weekly', 'starts_on', '2026-10-01',
+                             'weekdays', jsonb_build_array(1, 5), 'start_time', '19:00');
+  e := public.admin_upsert_event(adm, base);
+  perform public.submit_response(sh, (e->>'id')::uuid, '2026-11-06', m, 'going', 'today');
+  perform public.admin_set_response(adm, (e->>'id')::uuid, '2026-11-09', m, 'going', 'mon');
+  perform public.admin_set_response(adm, (e->>'id')::uuid, '2026-11-13', m, 'cant', 'fri');
+  perform public.admin_set_response(adm, (e->>'id')::uuid, '2026-11-16', m, 'going', 'mon2');
+  perform public.admin_skip_occurrence(adm, (e->>'id')::uuid, '2026-11-20', 'Holiday');
+  -- Fri 20:00: today's 19:00 session has started, so the old row ends today
+  perform set_config('app.now', '2026-11-06 20:00:00+02', true);
+  v2 := public.admin_upsert_event(adm, base || jsonb_build_object('id', e->>'id', 'start_time', '18:30'));
+  perform pg_temp.ok(v2->>'id' <> e->>'id', '(c) answer on today (started) versions the event');
+  perform pg_temp.ok((select ends_on from public.events where id = (e->>'id')::uuid) = '2026-11-06', '(c) old row ends today');
+  perform pg_temp.ok(exists (select 1 from public.responses where event_id = (e->>'id')::uuid and occurrence_date = '2026-11-06'),
+                     '(c) today''s answer stays on the old row');
+  perform pg_temp.ok((select count(*) from public.responses where event_id = (v2->>'id')::uuid) = 3
+                     and not exists (select 1 from public.responses where event_id = (e->>'id')::uuid and occurrence_date > '2026-11-06'),
+                     '(a) upcoming answers moved to the new version');
+  perform pg_temp.ok((select note from public.responses where event_id = (v2->>'id')::uuid and occurrence_date = '2026-11-13') = 'fri',
+                     '(a) moved answer keeps its note');
+  perform pg_temp.ok(exists (select 1 from public.skipped_occurrences where event_id = (v2->>'id')::uuid and occurrence_date = '2026-11-20'),
+                     '(a) upcoming skip moved to the new version');
+  s := public.get_group_public(sh)->'sessions'->0;
+  perform pg_temp.ok(s->'event'->>'id' = v2->>'id' and s->>'occurrence_date' = '2026-11-09'
+                     and s->'answers'->0->>'note' = 'mon', '(a) next session shows the carried answer: ' || s::text);
+  perform set_config('t.carry_adm', adm, true);
+  perform set_config('t.carry_v2', v2->>'id', true);
+  perform set_config('t.carry_m', m::text, true);
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- (b) day change drops answers for dates no longer scheduled
+-- ---------------------------------------------------------------------------
+do $$
+declare adm text := current_setting('t.carry_adm'); v2 uuid := current_setting('t.carry_v2')::uuid;
+        m uuid := current_setting('t.carry_m')::uuid; v3 jsonb;
+begin
+  perform set_config('app.now', '2026-11-10 12:00:00+02', true);  -- Tue
+  perform public.admin_mark_attendance(adm, v2, '2026-11-09', jsonb_build_array(jsonb_build_object('member_id', m, 'attended', true)));
+  v3 := public.admin_upsert_event(adm, jsonb_build_object('id', v2, 'title', 'Gym', 'kind', 'weekly', 'starts_on', '2026-10-01',
+          'weekdays', jsonb_build_array(5), 'start_time', '18:30'));
+  perform pg_temp.ok(v3->>'id' <> v2::text and v3->>'starts_on' = '2026-11-10', '(b) day change versions: ' || v3::text);
+  perform pg_temp.ok(exists (select 1 from public.responses where event_id = v2 and occurrence_date = '2026-11-09'),
+                     '(b) past Monday answer stays on the old row');
+  perform pg_temp.ok(exists (select 1 from public.responses where event_id = (v3->>'id')::uuid and occurrence_date = '2026-11-13'),
+                     '(b) Friday answer moved');
+  perform pg_temp.ok(not exists (select 1 from public.responses where occurrence_date = '2026-11-16'
+                                    and member_id = m), '(b) Monday answer no longer scheduled is deleted');
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- (d) attendance alone triggers versioning; future-only answers edit in place
+-- ---------------------------------------------------------------------------
+do $$
+declare r jsonb; adm text; sh text; m uuid; swim jsonb; s2 jsonb; row jsonb; base jsonb;
+begin
+  perform set_config('app.now', '2026-11-04 12:00:00+02', true);  -- Wed
+  r := public.create_group('Pool', 'Africa/Cairo', array['Dee']);
+  adm := r->>'admin_code'; sh := r->>'share_code';
+  select id into m from public.members where group_id = (select id from public.groups where share_code = sh);
+  base := jsonb_build_object('title', 'Swim', 'kind', 'weekly', 'starts_on', '2026-10-01',
+                             'weekdays', jsonb_build_array(5), 'start_time', '07:00');
+  swim := public.admin_upsert_event(adm, base);
+  perform public.admin_mark_attendance(adm, (swim->>'id')::uuid, '2026-10-30', jsonb_build_array(jsonb_build_object('member_id', m, 'attended', true)));
+  row := public.admin_upsert_event(adm, base || jsonb_build_object('id', swim->>'id', 'start_time', '08:00'));
+  perform pg_temp.ok(row->>'id' <> swim->>'id', '(d) attendance-only history versions the event');
+  -- future answers only: stays in place, keeps answers that are still scheduled, drops the rest
+  s2 := public.admin_upsert_event(adm, jsonb_build_object('title', 'Lift', 'kind', 'weekly', 'starts_on', '2026-11-01',
+          'weekdays', jsonb_build_array(1, 5), 'start_time', '07:00'));
+  perform public.admin_set_response(adm, (s2->>'id')::uuid, '2026-11-06', m, 'going', null);
+  perform public.admin_set_response(adm, (s2->>'id')::uuid, '2026-11-09', m, 'going', null);
+  row := public.admin_upsert_event(adm, jsonb_build_object('id', s2->>'id', 'title', 'Lift', 'kind', 'weekly', 'starts_on', '2026-11-01',
+          'weekdays', jsonb_build_array(5), 'start_time', '07:30'));
+  perform pg_temp.ok(row->>'id' = s2->>'id', '(d) future-only answers: edited in place');
+  perform pg_temp.ok(exists (select 1 from public.responses where event_id = (s2->>'id')::uuid and occurrence_date = '2026-11-06')
+                     and not exists (select 1 from public.responses where event_id = (s2->>'id')::uuid and occurrence_date = '2026-11-09'),
+                     '(d) in-place edit keeps Friday answer, drops unscheduled Monday');
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- abuse caps and bounds
+-- ---------------------------------------------------------------------------
+do $$
+declare r jsonb; adm text; sh text; gid uuid; e jsonb; m uuid; i int; one jsonb;
+begin
+  perform set_config('app.now', '2027-03-03 12:00:00+02', true);  -- Wed
+  perform pg_temp.expect_err(format('select public.create_group(%L, %L, %L::text[])', 'Big', 'UTC',
+                               (select array_agg('M' || g) from generate_series(1, 201) g)),
+                             'invalid_input', 'create_group with 201 members');
+  r := public.create_group('Caps', 'Africa/Cairo', (select array_agg('M' || g) from generate_series(1, 200) g));
+  adm := r->>'admin_code'; sh := r->>'share_code';
+  select id into gid from public.groups where share_code = sh;
+  perform pg_temp.ok((select count(*) from public.members where group_id = gid) = 200, '200 members accepted');
+  perform pg_temp.expect_err(format('select public.admin_upsert_member(%L, null, %L)', adm, 'One more'), 'invalid_input', '201st active member');
+  select id into m from public.members where group_id = gid and name = 'M1';
+  perform public.admin_upsert_member(adm, m, 'M1 renamed');
+  perform public.admin_deactivate_member(adm, m);
+  perform pg_temp.ok((public.admin_upsert_member(adm, null, 'One more')->>'active')::boolean, 'add works again below the cap');
+
+  -- event date bounds (local today 2027-03-03)
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"X","kind":"once","starts_on":"2029-03-04","start_time":"19:00"}')$q$, adm), 'invalid_input', 'starts_on > 2 years ahead');
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"X","kind":"once","starts_on":"2025-03-02","start_time":"19:00"}')$q$, adm), 'invalid_input', 'starts_on > 2 years back');
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"X","kind":"weekly","starts_on":"2027-03-01","weekdays":[5],"start_time":"19:00","ends_on":"9999-12-31"}')$q$, adm), 'invalid_input', 'ends_on > 2 years ahead');
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"X","kind":"weekly","starts_on":"2027-03-01","weekdays":[null],"start_time":"19:00"}')$q$, adm), 'invalid_input', 'weekdays [null]');
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"X","kind":"weekly","starts_on":"2027-03-01","weekdays":[1,null],"start_time":"19:00"}')$q$, adm), 'invalid_input', 'weekdays with a null');
+  one := public.admin_upsert_event(adm, jsonb_build_object('title', 'Edge', 'kind', 'once', 'starts_on', '2029-03-03', 'start_time', '19:00'));
+  perform pg_temp.ok(one->>'starts_on' = '2029-03-03', 'starts_on exactly 2 years ahead accepted');
+
+  -- answers at most a year ahead
+  e := public.admin_upsert_event(adm, jsonb_build_object('title', 'Fri', 'kind', 'weekly', 'starts_on', '2027-03-01',
+         'weekdays', jsonb_build_array(5), 'start_time', '19:00'));
+  select id into m from public.members where group_id = gid and name = 'M2';
+  perform public.admin_set_response(adm, (e->>'id')::uuid, '2028-03-03', m, 'going', null);
+  perform pg_temp.expect_err(format('select public.admin_set_response(%L, %L, %L, %L, %L, null)', adm, e->>'id', '2028-03-10', m, 'going'),
+                             'invalid_input', 'admin_set_response more than a year ahead');
+
+  -- at most 20 active events (2 exist)
+  for i in 3 .. 20 loop
+    perform public.admin_upsert_event(adm, jsonb_build_object('title', 'E' || i, 'kind', 'once', 'starts_on', '2027-04-01', 'start_time', '19:00'));
+  end loop;
+  perform pg_temp.expect_err(format($q$select public.admin_upsert_event(%L, '{"title":"E21","kind":"once","starts_on":"2027-04-01","start_time":"19:00"}')$q$, adm), 'invalid_input', '21st active event');
+  -- editing at the cap still works; ending one frees a slot
+  perform public.admin_upsert_event(adm, (e - 'id' - 'series_id' - 'active') || jsonb_build_object('id', e->>'id', 'title', 'Friday'));
+  perform public.admin_end_event(adm, (one->>'id')::uuid);
+  perform public.admin_upsert_event(adm, jsonb_build_object('title', 'E21', 'kind', 'once', 'starts_on', '2027-04-01', 'start_time', '19:00'));
+end $$;
+
+-- old events keep their original dates on edit even if now out of bounds
+do $$
+declare r jsonb; adm text; e jsonb;
+begin
+  perform set_config('app.now', '2026-11-04 12:00:00+02', true);
+  r := public.create_group('Old', 'UTC', array['Oz']);
+  adm := r->>'admin_code';
+  e := public.admin_upsert_event(adm, jsonb_build_object('title', 'Long', 'kind', 'weekly', 'starts_on', '2025-01-01',
+         'weekdays', jsonb_build_array(2), 'start_time', '19:00'));
+  perform set_config('app.now', '2027-06-01 12:00:00+00', true);  -- starts_on now > 2 years back
+  e := public.admin_upsert_event(adm, (e - 'id' - 'series_id' - 'active') || jsonb_build_object('id', e->>'id', 'title', 'Longer'));
+  perform pg_temp.ok(e->>'title' = 'Longer' and e->>'starts_on' = '2025-01-01', 'unchanged old starts_on accepted on edit');
+end $$;
+
+-- create_group global throttle: 30 groups in the last minute -> rate_limited
+do $$
+declare r jsonb;
+begin
+  perform set_config('app.now', '2027-05-05 12:00:00+00', true);
+  insert into public.groups (name, timezone, share_code, admin_code_hash, created_at)
+  select 'R' || g, 'UTC', 'RL' || g, 'rl-hash-' || g, public.app_now() - interval '30 seconds'
+    from generate_series(1, 30) g;
+  perform pg_temp.expect_err($q$select public.create_group('Spam', 'UTC', array['S'])$q$, 'rate_limited', '31st group in a minute');
+  perform set_config('app.now', '2027-05-05 12:00:31+00', true);
+  r := public.create_group('Later', 'UTC', array['S']);
+  perform pg_temp.ok(r ? 'share_code', 'create_group works again a minute later');
 end $$;
 
 -- ---------------------------------------------------------------------------

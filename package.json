@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "db:migrate": "dotenv -e .env -- sh -c 'psql \"$SUPABASE_DB_URL\" -v ON_ERROR_STOP=1 -f supabase/migrations/0001_init.sql'",
+    "db:migrate": "dotenv -e .env -- sh -c 'for f in supabase/migrations/*.sql; do echo \"Applying $f\"; psql \"$SUPABASE_DB_URL\" -X -q -v ON_ERROR_STOP=1 -f \"$f\" || exit 1; done'",
     "db:test": "dotenv -e .env -- sh -c 'psql \"$SUPABASE_DB_URL\" -v ON_ERROR_STOP=1 -f supabase/tests/test.sql'"
   },
   "dependencies": {
