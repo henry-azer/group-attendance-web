@@ -1,6 +1,6 @@
 // #/a/insights — attendance trends for one event series: headcount over time, per-member
 // reliability/streaks, who's slipping, response timing, and a CSV export of every response.
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { adminGetHistory } from '../../api/rpc.ts'
 import { HeadcountBars } from '../../components/charts/HeadcountBars.tsx'
 import { Meter } from '../../components/charts/Meter.tsx'
@@ -79,6 +79,8 @@ function defaultSeriesId(history: History, now: Date, options: SeriesOption[]): 
   return bestId ?? options[0].id
 }
 
+// `reliabilityPct` is `null` when a member never said "Going" — sort it as -Infinity so those
+// members fall to the bottom on a descending sort instead of comparing equal to 0% reliability.
 function sortValue(m: MemberStat, key: SortKey): number {
   const v = m[key]
   return v == null ? -Infinity : v
@@ -120,30 +122,26 @@ export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
   const [sortKey, setSortKey] = useState<SortKey>('pct')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const result = await adminGetHistory(adminCode)
-      if (cancelled) return
-      if (!result.ok) {
-        if (handleAdminNotFound(result.error, showToast)) return
-        setStatus('error')
-        return
-      }
-      setHistory(result.data)
-      setSeriesId((current) => {
-        const options = seriesOptionsFrom(result.data.events)
-        if (current && options.some((o) => o.id === current)) return current
-        return defaultSeriesId(result.data, new Date(), options)
-      })
-      setStatus('ready')
+  const load = useCallback(async () => {
+    const result = await adminGetHistory(adminCode)
+    if (!result.ok) {
+      if (handleAdminNotFound(result.error, showToast)) return
+      setStatus('error')
+      return
     }
-    load()
-    return () => {
-      cancelled = true
-    }
+    setHistory(result.data)
+    setSeriesId((current) => {
+      const options = seriesOptionsFrom(result.data.events)
+      if (current && options.some((o) => o.id === current)) return current
+      return defaultSeriesId(result.data, new Date(), options)
+    })
+    setStatus('ready')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminCode])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   const options = useMemo(() => (history ? seriesOptionsFrom(history.events) : []), [history])
 
@@ -169,15 +167,7 @@ export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
           <Button
             onClick={() => {
               setStatus('loading')
-              adminGetHistory(adminCode).then((result) => {
-                if (!result.ok) {
-                  if (handleAdminNotFound(result.error, showToast)) return
-                  setStatus('error')
-                  return
-                }
-                setHistory(result.data)
-                setStatus('ready')
-              })
+              load()
             }}
           >
             Retry

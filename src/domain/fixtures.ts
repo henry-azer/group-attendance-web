@@ -26,6 +26,18 @@ import type { History } from './types.ts'
 export const seriesId = 'series-practice'
 const eventId = 'event-practice'
 
+// A second, unrelated series ("Book Club", Wednesdays 19:00) — added only so UI tests can prove
+// switching the series picker actually changes which series' insights are shown. Its own numbers
+// are deliberately different from "Practice"'s (33% then 67% attendance vs. Practice's 81% avg):
+//   09-02  checked (expected: Alice, Cara, Dee — Bob hasn't joined yet) — only Alice attends
+//   09-09  checked (same expected set) — Alice and Cara attend, Dee doesn't
+// Both are past and unskipped relative to `now` (2026-10-23), same as the Practice fixture above.
+// Everything above (computeInsights/toCsv tests keyed to `seriesId`/the whole history) is
+// unaffected: computeInsights filters by series_id, and these rows use a distinct event_id so they
+// never collide with Practice's occurrence keys.
+export const seriesIdBookClub = 'series-bookclub'
+const eventIdBookClub = 'event-bookclub'
+
 export const memberAlice = {
   id: 'member-alice',
   name: 'Alice',
@@ -73,8 +85,22 @@ export function buildHistory(): History {
         ends_on: null,
         active: true,
       },
+      {
+        id: eventIdBookClub,
+        series_id: seriesIdBookClub,
+        title: 'Book Club',
+        location: 'Library',
+        kind: 'weekly',
+        starts_on: '2026-09-02',
+        weekdays: [3],
+        start_time: '19:00',
+        ends_on: null,
+        active: true,
+      },
     ],
     occurrences: [
+      { event_id: eventIdBookClub, series_id: seriesIdBookClub, occurrence_date: '2026-09-02', starts_at: '2026-09-02T19:00:00Z', skipped: false, checked: true },
+      { event_id: eventIdBookClub, series_id: seriesIdBookClub, occurrence_date: '2026-09-09', starts_at: '2026-09-09T19:00:00Z', skipped: false, checked: true },
       { event_id: eventId, series_id: seriesId, occurrence_date: '2026-09-07', starts_at: '2026-09-07T18:00:00Z', skipped: false, checked: true },
       { event_id: eventId, series_id: seriesId, occurrence_date: '2026-09-14', starts_at: '2026-09-14T18:00:00Z', skipped: false, checked: true },
       { event_id: eventId, series_id: seriesId, occurrence_date: '2026-09-21', starts_at: '2026-09-21T18:00:00Z', skipped: false, checked: true },
@@ -120,6 +146,15 @@ export function buildHistory(): History {
       // Stranded response: no matching occurrence for this series (schedule versioning
       // leftover). Must be ignored by computeInsights.
       { event_id: eventId, occurrence_date: '2026-08-03', member_id: memberAlice.id, status: 'going', note: null, first_answered_at: '2026-08-01T10:00:00Z', updated_at: '2026-08-01T10:00:00Z' },
+
+      // Book Club (second series): 09-02 — Alice going, Cara can't, Dee going (but no-shows).
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberAlice.id, status: 'going', note: null, first_answered_at: '2026-08-30T10:00:00Z', updated_at: '2026-08-30T10:00:00Z' },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberCara.id, status: 'cant', note: null, first_answered_at: '2026-08-30T11:00:00Z', updated_at: '2026-08-30T11:00:00Z' },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberDee.id, status: 'going', note: null, first_answered_at: '2026-08-30T12:00:00Z', updated_at: '2026-08-30T12:00:00Z' },
+      // 09-09 — Alice and Cara going (both attend), Dee can't.
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberAlice.id, status: 'going', note: null, first_answered_at: '2026-09-06T10:00:00Z', updated_at: '2026-09-06T10:00:00Z' },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberCara.id, status: 'going', note: null, first_answered_at: '2026-09-06T11:00:00Z', updated_at: '2026-09-06T11:00:00Z' },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberDee.id, status: 'cant', note: null, first_answered_at: '2026-09-06T12:00:00Z', updated_at: '2026-09-06T12:00:00Z' },
     ],
     attendance: [
       // 09-07
@@ -137,6 +172,15 @@ export function buildHistory(): History {
       { event_id: eventId, occurrence_date: '2026-09-21', member_id: memberDee.id, attended: true },
       // Stranded attendance row (same leftover occurrence_date as above) — must be ignored too.
       { event_id: eventId, occurrence_date: '2026-08-03', member_id: memberAlice.id, attended: true },
+
+      // Book Club: 09-02 — only Alice actually attends (33% headcount).
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberAlice.id, attended: true },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberCara.id, attended: false },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-02', member_id: memberDee.id, attended: false },
+      // 09-09 — Alice and Cara attend, Dee doesn't (67% headcount).
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberAlice.id, attended: true },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberCara.id, attended: true },
+      { event_id: eventIdBookClub, occurrence_date: '2026-09-09', member_id: memberDee.id, attended: false },
     ],
   }
 }

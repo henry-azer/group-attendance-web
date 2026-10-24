@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildHistory, memberAlice, memberBob, memberCara, memberDee, now } from '../../domain/fixtures.ts'
+import { buildHistory, memberAlice, memberBob, memberCara, memberDee, now, seriesIdBookClub } from '../../domain/fixtures.ts'
 import { ToastProvider } from '../../ui/Toast.tsx'
 import { InsightsTab } from './InsightsTab.tsx'
 
@@ -75,7 +75,7 @@ describe('InsightsTab', () => {
 
   it('downloads a CSV named after the slugified group name', async () => {
     vi.mocked(adminGetHistory).mockResolvedValueOnce({ ok: true, data: buildHistory() })
-    const createObjectURL = vi.fn(() => 'blob:mock')
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:mock')
     const revokeObjectURL = vi.fn()
     // jsdom has no object URL support; stub just enough for the download flow.
     Object.assign(URL, { createObjectURL, revokeObjectURL })
@@ -108,5 +108,38 @@ describe('InsightsTab', () => {
     vi.mocked(adminGetHistory).mockResolvedValueOnce({ ok: false, error: 'not_found' })
     renderTab()
     expect(await screen.findByText('That admin code no longer works.')).toBeTruthy()
+  })
+
+  it('renders insights after a failed load is retried, instead of getting stuck on "No events yet"', async () => {
+    vi.mocked(adminGetHistory)
+      .mockResolvedValueOnce({ ok: false, error: 'network' })
+      .mockResolvedValueOnce({ ok: true, data: buildHistory() })
+    renderTab()
+
+    await screen.findByText("Couldn't load insights")
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    // Before the fix, Retry never set seriesId, so insights stayed null and the tab fell through
+    // to the "No events yet" empty state even though history loaded successfully.
+    await screen.findByText('Avg attendance')
+    expect(screen.getByText('81%', { selector: '.insights-stat__value' })).toBeTruthy()
+    expect(screen.queryByText('No events yet')).toBeFalsy()
+    expect(adminGetHistory).toHaveBeenCalledTimes(2)
+  })
+
+  it('updates the stats when the series picker is switched to a different series', async () => {
+    vi.mocked(adminGetHistory).mockResolvedValueOnce({ ok: true, data: buildHistory() })
+    renderTab()
+
+    // Defaults to Practice (its most recent past occurrence is newer than Book Club's).
+    await screen.findByText('Avg attendance')
+    expect(screen.getByText('81%', { selector: '.insights-stat__value' })).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Series'), { target: { value: seriesIdBookClub } })
+
+    expect(screen.getByText('50%', { selector: '.insights-stat__value' })).toBeTruthy()
+    expect(screen.getByText('1.5')).toBeTruthy() // Book Club's avg headcount: (1+2)/2
+    expect(screen.getByText(/Top streak/).textContent).toBe('Top streak · Alice')
+    expect(screen.queryByText('81%', { selector: '.insights-stat__value' })).toBeFalsy()
   })
 })
