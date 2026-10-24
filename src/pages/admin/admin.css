@@ -42,11 +42,14 @@
 
 .admin-tab {
   flex: 1;
+  min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 56px;
-  padding: var(--space-2) var(--space-1);
+  gap: var(--space-1);
+  min-height: 48px;
+  padding: var(--space-2) 0;
   background: transparent;
   border: none;
   border-top: 2px solid transparent;
@@ -61,6 +64,17 @@
     color var(--duration-ui) var(--ease-out),
     border-color var(--duration-ui) var(--ease-out),
     transform var(--duration-press) var(--ease-out);
+}
+
+.admin-tab__icon {
+  flex-shrink: 0;
+}
+
+.admin-tab__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-tab:active {
@@ -87,11 +101,18 @@
 
   .admin-tab {
     flex: none;
+    flex-direction: row;
     min-height: 48px;
     padding: var(--space-3) var(--space-4);
     font-size: var(--text-sm);
     border-top: none;
     border-bottom: 2px solid transparent;
+  }
+
+  /* The bottom bar's icons exist to help each short label fit on one line at 360px; at this width
+     there's room to spare, so the top row stays the plain text-only tabs it always was. */
+  .admin-tab__icon {
+    display: none;
   }
 
   .admin-tab.is-active {
@@ -106,7 +127,9 @@
 
 @media (max-width: 719.98px) {
   .admin-content {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    /* The bar is now icon-over-label (~60px tall) rather than single-line (~56px) — bumped from
+       72px to keep the same clearance below it. */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Toasts are rendered by the app-level ToastProvider, outside this file's reach, so they don't
@@ -114,7 +137,7 @@
      clear of it — the moment the admin tab bar exists in the DOM — with no change to
      AdminLayout.tsx or ToastProvider. */
   body:has(.admin-tabs) .toast-viewport {
-    bottom: calc(var(--space-5) + 56px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--space-5) + 60px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -135,19 +158,6 @@
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--ink-muted);
-}
-
-.event-card__staged {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.event-card__staged-summary {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
 }
 
 /* Week tab */
@@ -488,8 +498,11 @@
 }
 
 .checkin-badge--unchecked {
-  background: var(--danger);
-  color: var(--danger-ink);
+  /* Calm neutral, not an error: this just means "not checked in yet", which is the normal state
+     for a session until someone opens it — --danger/--danger-ink would wrongly read as a failure. */
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
 }
 
 .checkin-badge--checked {
