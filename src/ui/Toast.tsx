@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            role="status"
+            role={toast.variant === 'error' ? 'alert' : 'status'}
             className={['toast', `toast--${toast.variant}`, toast.leaving && 'is-leaving']
               .filter(Boolean)
               .join(' ')}

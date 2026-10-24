@@ -5,12 +5,22 @@
  * constraints. The dark palette matches the values handed down for this task; all pairs that
  * carry text (ink/bg, accent-ink/accent, accent/bg) were checked against WCAG AA and clear it
  * with room to spare (see table below). `--line` is intentionally low-contrast in both themes —
- * it is a quiet surface-to-surface step, never the sole indicator of an interactive boundary.
- * Interactive affordance instead comes from solid button fills and the `:focus-visible` outline
- * (both use `--accent`, which has strong contrast against both backgrounds). `--danger` and
- * `--ink-muted` are additions beyond the spec'd palette (needed for form errors and secondary
- * text); both were derived from the warm palette and checked the same way. Measured contrast
- * ratios (WCAG relative luminance):
+ * it is a quiet surface-to-surface step, used only on decorative surfaces (Card, Toast) that
+ * don't depend on their border to be perceived as a boundary.
+ *
+ * `--line-strong` is for every control whose border *is* the only resting indicator of its
+ * boundary (text inputs/textarea, the Segmented container, secondary buttons). It is checked
+ * against WCAG 1.4.11 (non-text contrast, 3:1 minimum) against *both* `--bg` and `--surface`,
+ * since these controls sit on `--surface` on a page whose background is `--bg`:
+ *   light  --line-strong #8c7f6e : 3.69:1 vs --bg, 3.91:1 vs --surface
+ *   dark   --line-strong #a89a86 : 6.36:1 vs --bg, 5.83:1 vs --surface
+ * Both clear 3:1 with margin. Beyond that resting border, these controls also get the shared
+ * `:focus-visible` outline (`--accent`, see below) on interaction, which is not contrast-critical
+ * since it's extra (not the only) affordance.
+ *
+ * `--danger` and `--ink-muted` are additions beyond the spec'd palette (needed for form errors
+ * and secondary text); both were derived from the warm palette and checked the same way.
+ * Measured contrast ratios (WCAG relative luminance):
  *   light  ink/bg 14.4:1 · accent-ink/accent 6.3:1 · ink-muted/bg 5.8:1 · danger/bg 6.2:1
  *   dark   ink/bg 14.3:1 · accent-ink/accent 7.4:1 · accent/bg 8.0:1 · ink-muted/bg 7.7:1 · danger/bg 6.8:1
  */
@@ -24,6 +34,7 @@
   --ink: #2a2420;
   --ink-muted: #6b6058;
   --line: #ece4d8;
+  --line-strong: #8c7f6e;
   --accent: #2f6b4f;
   --accent-ink: #ffffff;
   --danger: #b3261e;
@@ -89,6 +100,7 @@
     --ink: #efe7dc;
     --ink-muted: #b7aa98;
     --line: #3a332b;
+    --line-strong: #a89a86;
     --accent: #6fbf94;
     --accent-ink: #10241a;
     --danger: #e5897a;
@@ -104,6 +116,7 @@
   --ink: #efe7dc;
   --ink-muted: #b7aa98;
   --line: #3a332b;
+  --line-strong: #a89a86;
   --accent: #6fbf94;
   --accent-ink: #10241a;
   --danger: #e5897a;

@@ -39,7 +39,7 @@
 .btn--secondary {
   background: var(--surface);
   color: var(--ink);
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
 
 .btn--ghost {
@@ -81,7 +81,7 @@
   width: 100%;
   background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-base);
@@ -115,7 +115,7 @@
 .segmented {
   display: inline-flex;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   padding: var(--space-1);
   gap: var(--space-1);
@@ -264,15 +264,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spinner {
-    animation: spinner-pulse 1200ms ease-in-out infinite;
-    border-top-color: var(--line);
-  }
-
-  @keyframes spinner-pulse {
-    50% {
-      opacity: 0.35;
-    }
-  }
-}
+/* No separate reduced-motion rule here: base.css's blanket prefers-reduced-motion override
+   already collapses animation-duration to ~0 and iteration-count to 1, so the spinner renders as
+   a static ring (still legible as "loading") without a second, functionally dead animation. */
