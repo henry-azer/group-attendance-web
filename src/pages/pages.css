@@ -1,18 +1,85 @@
 /* Page-level layout for Home, Create and Created. Tokens only — see src/styles/tokens.css. */
 
 .hero {
-  padding-block: var(--space-7) var(--space-8);
+  padding-block: var(--space-8) var(--space-7);
 }
 
-.hero h1 {
-  margin-bottom: var(--space-4);
+.hero__title {
+  font-size: clamp(3rem, 2rem + 6vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  margin-bottom: var(--space-5);
 }
 
 .hero__lede {
   font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  max-width: 34ch;
+  margin-bottom: var(--space-7);
+  text-wrap: pretty;
+}
+
+/* Home preview — a live miniature of the member screen. */
+.home-preview {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.home-preview__question {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-snug);
+}
+
+.home-preview__meta {
+  margin: var(--space-1) 0 var(--space-5);
   color: var(--ink-muted);
-  max-width: 32ch;
-  margin-bottom: var(--space-6);
+  font-size: var(--text-sm);
+}
+
+.home-preview__count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.home-preview__number {
+  font-size: var(--text-count);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+}
+
+.home-preview__label {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  color: var(--going-text);
+}
+
+.home-preview__of {
+  color: var(--ink-muted);
+  font-weight: var(--weight-regular);
+}
+
+.home-preview__stack {
+  margin-left: auto;
+  align-self: center;
+}
+
+.home-preview .headcount__seg {
+  transition: width var(--duration-enter) var(--ease-out);
+}
+
+.home-preview__answer.answer {
+  width: 100%;
+  margin-top: var(--space-5);
+  border-radius: var(--radius-inset);
 }
 
 .home-admin-card {
@@ -21,9 +88,32 @@
 
 .home-admin-card__heading {
   font-size: var(--text-base);
-  font-family: var(--font-ui);
-  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-4);
+}
+
+/* Create page */
+.create-page__intro {
+  margin-bottom: var(--space-6);
+}
+
+.create-page__intro h1 {
+  margin-bottom: var(--space-2);
+}
+
+.create-page__intro p {
+  margin: 0;
   color: var(--ink-muted);
+}
+
+.form-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5) var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.form-card__heading {
+  font-size: var(--text-base);
   margin-bottom: var(--space-4);
 }
 
@@ -31,6 +121,7 @@
   margin: 0;
   font-size: var(--text-sm);
   color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .members-meta__warning {
@@ -46,10 +137,7 @@
 
 .event-card__heading {
   font-size: var(--text-base);
-  font-family: var(--font-ui);
-  font-weight: var(--weight-medium);
-  color: var(--ink-muted);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .weekday-picker {
@@ -60,12 +148,14 @@
 
 .weekday-picker__chip {
   appearance: none;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
+  border: none;
+  background: var(--surface-2);
   color: var(--ink);
   font: inherit;
   font-weight: var(--weight-medium);
-  padding: var(--space-2) var(--space-4);
+  min-width: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
   cursor: pointer;
   transform: scale(1);
@@ -81,9 +171,8 @@
 }
 
 .weekday-picker__chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
+  background: var(--primary);
+  color: var(--primary-ink);
 }
 
 .form-error {
@@ -98,9 +187,6 @@
 
 .code-card__heading {
   font-size: var(--text-base);
-  font-family: var(--font-ui);
-  font-weight: var(--weight-medium);
-  color: var(--ink-muted);
   margin-bottom: var(--space-3);
 }
 
@@ -110,9 +196,13 @@
 
 .code-card__value code {
   display: block;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums slashed-zero;
   font-size: var(--text-xl);
-  font-weight: var(--weight-medium);
-  letter-spacing: 0.04em;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  user-select: all;
+  -webkit-user-select: all;
   word-break: break-all;
   color: var(--ink);
   background: var(--bg);
@@ -122,14 +212,17 @@
 
 .code-card__value--link code {
   font-size: var(--text-sm);
-  font-weight: var(--weight-regular);
+  font-weight: var(--weight-medium);
   letter-spacing: normal;
 }
 
 .code-card__warning {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--cant-soft);
   font-size: var(--text-sm);
-  color: var(--danger);
+  color: var(--cant-text);
 }
 
 .code-card__actions {

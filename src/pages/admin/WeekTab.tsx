@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { adminSetResponse, adminSkipOccurrence } from '../../api/rpc.ts'
 import { SessionCard } from '../../components/SessionCard.tsx'
 import type { AdminGroup, Session, Status } from '../../domain/types.ts'
-import { Button, Card, EmptyState, TextInput, useToast } from '../../ui/index.ts'
+import { Avatar, Button, Card, EmptyState, TextInput, useToast } from '../../ui/index.ts'
 import { handleMutationNotFound } from './adminErrors.ts'
 
 export interface WeekTabProps {
@@ -57,7 +57,10 @@ function AnswerRow({ adminCode, session, member, onReload }: AnswerRowProps) {
 
   return (
     <li className="week-answer-row">
-      <span className="week-answer-row__name">{member.name}</span>
+      <span className="week-answer-row__name">
+        <Avatar name={member.name} />
+        <span>{member.name}</span>
+      </span>
       <div className="week-answer-row__options" aria-busy={pending}>
         <button
           type="button"

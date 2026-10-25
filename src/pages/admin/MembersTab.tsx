@@ -4,7 +4,7 @@
 import { useState, type FormEvent } from 'react'
 import { adminDeactivateMember, adminUpsertMember } from '../../api/rpc.ts'
 import type { AdminGroup } from '../../domain/types.ts'
-import { Button, Card, EmptyState, Field, TextInput, useToast } from '../../ui/index.ts'
+import { Avatar, Button, Card, EmptyState, Field, TextInput, useToast } from '../../ui/index.ts'
 import { handleMutationNotFound } from './adminErrors.ts'
 
 export interface MembersTabProps {
@@ -148,7 +148,10 @@ function MemberRow({ adminCode, member, onReload }: MemberRowProps) {
 
   return (
     <Card className="member-row">
-      <span className="member-row__name">{member.name}</span>
+      <span className="member-row__name">
+        <Avatar name={member.name} />
+        <span>{member.name}</span>
+      </span>
       <div className="member-row__actions">
         {confirmingRemove ? (
           <>

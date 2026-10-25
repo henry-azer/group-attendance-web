@@ -322,12 +322,16 @@ export function InsightsTab({ adminCode, groupName }: InsightsTabProps) {
               {sorted.map((m) => (
                 <tr key={m.memberId}>
                   <td data-label="Name">
-                    {m.name}
-                    {!m.active && <span className="muted"> (left)</span>}
+                    <span>
+                      {m.name}
+                      {!m.active && <span className="muted"> (left)</span>}
+                    </span>
                   </td>
                   <td data-label="Attendance %">{m.pct}%</td>
                   <td data-label="Streak">
-                    {m.currentStreak} <span className="muted">(best {m.longestStreak})</span>
+                    <span>
+                      {m.currentStreak} <span className="muted">(best {m.longestStreak})</span>
+                    </span>
                   </td>
                   <td data-label="Reliability">{m.reliabilityPct == null ? '—' : `${m.reliabilityPct}%`}</td>
                   <td data-label="No-shows">{m.noShows}</td>

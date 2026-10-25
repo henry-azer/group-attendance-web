@@ -66,8 +66,10 @@ export function HeadcountBars({ sessions }: HeadcountBarsProps) {
           const noReplyHeight = Math.max(0, scale(s.noReply) - (s.noReply > 0 ? SEGMENT_GAP : 0))
 
           const cameY = CHART_HEIGHT - cameHeight
-          const cantY = cameY - scale(s.cant) + (s.cant > 0 ? SEGMENT_GAP : 0) - cantHeight
-          const noReplyY = cantY - scale(s.noReply) + (s.noReply > 0 ? SEGMENT_GAP : 0) - noReplyHeight
+          // Each segment owns `scale(n)` of the column and draws `scale(n) - gap` of it, stacked
+          // bottom-up: came, then can't, then no reply.
+          const cantY = CHART_HEIGHT - scale(s.came) - cantHeight
+          const noReplyY = CHART_HEIGHT - scale(s.came) - scale(s.cant) - noReplyHeight
 
           const label = sessionLabel(s)
 

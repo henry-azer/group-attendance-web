@@ -154,6 +154,11 @@ export function AdminLayout() {
     <div className="admin-shell">
       <div className="container admin-header">
         <h1>{group?.name ?? 'Admin'}</h1>
+        {group && (
+          <p className="admin-header__sub">
+            Organizer · {group.members.filter((m) => m.active).length} active members
+          </p>
+        )}
       </div>
 
       <nav className="admin-tabs" aria-label="Admin sections">

@@ -201,20 +201,33 @@ export function MemberPage({ shareCode }: MemberPageProps) {
 
   const sessions = sortedSessions(group.sessions)
   const hasUpcoming = sessions.some((session) => session.occurrence_date)
+  const me = meId ? group.members.find((m) => m.id === meId) : undefined
 
   return (
     <div className="container screen member-page">
-      <h1>{group.name}</h1>
+      <header className="member-page__header">
+        <h1>{group.name}</h1>
+        <p className="member-page__sub">
+          {group.members.length === 1 ? '1 member' : `${group.members.length} members`}
+          {me ? (
+            <>
+              {' · '}answering as <strong>{me.name}</strong>
+            </>
+          ) : null}
+        </p>
+      </header>
 
-      <p id="name-picker-label" className="member-page__name-picker-label">
-        Who are you?
-      </p>
-      <NamePicker
-        members={group.members}
-        selectedId={meId}
-        onSelect={handleSelectMember}
-        labelId="name-picker-label"
-      />
+      <section className="who-card" aria-labelledby="name-picker-label">
+        <p id="name-picker-label" className="member-page__name-picker-label">
+          Who are you?
+        </p>
+        <NamePicker
+          members={group.members}
+          selectedId={meId}
+          onSelect={handleSelectMember}
+          labelId="name-picker-label"
+        />
+      </section>
 
       {!hasUpcoming ? (
         <EmptyState

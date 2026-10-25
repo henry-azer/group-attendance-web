@@ -12,7 +12,7 @@ import {
 import { loadErrorHint, type ApiError } from '../../api/errors.ts'
 import type { AdminMember, History, HistoryAttendance, HistoryOccurrence, HistoryResponse } from '../../domain/types.ts'
 import { formatSessionWhen } from '../../lib/format.ts'
-import { Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
+import { Avatar, Button, EmptyState, Spinner, useToast } from '../../ui/index.ts'
 import { handleAdminNotFound, handleMutationNotFound } from './adminErrors.ts'
 
 export interface CheckinTabProps {
@@ -247,7 +247,10 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
                 <ul className="checkin-member-list">
                   {expectedIds.map((id) => (
                     <li key={id} className="checkin-member-row">
-                      <span>{memberName(history.members, id)}</span>
+                      <span className="checkin-member-row__name">
+                        <Avatar name={memberName(history.members, id)} />
+                        <span>{memberName(history.members, id)}</span>
+                      </span>
                       <button
                         type="button"
                         role="checkbox"
@@ -277,7 +280,10 @@ export function CheckinTab({ adminCode, tz }: CheckinTabProps) {
                       <ul className="checkin-member-list">
                         {otherIds.map((id) => (
                           <li key={id} className="checkin-member-row">
-                            <span>{memberName(history.members, id)}</span>
+                            <span className="checkin-member-row__name">
+                        <Avatar name={memberName(history.members, id)} />
+                        <span>{memberName(history.members, id)}</span>
+                      </span>
                             <button
                               type="button"
                               role="checkbox"

@@ -130,55 +130,63 @@ export function CreatePage() {
 
   return (
     <div className="container screen">
-      <h1>Create a group</h1>
-      <p className="muted">Takes about two minutes. You'll get two codes at the end.</p>
+      <header className="create-page__intro">
+        <h1>Create a group</h1>
+        <p>Takes about two minutes. You'll get two codes at the end.</p>
+      </header>
 
       <form onSubmit={handleSubmit} noValidate>
-        <Field label="Group name" htmlFor="group-name" error={errors.name}>
-          <TextInput
-            id="group-name"
-            name="name"
-            placeholder="e.g. Friday 5-a-side"
-            maxLength={80}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
+        <section className="form-card" aria-labelledby="create-group-heading">
+          <h2 id="create-group-heading" className="form-card__heading">Group</h2>
+          <Field label="Group name" htmlFor="group-name" error={errors.name}>
+            <TextInput
+              id="group-name"
+              name="name"
+              placeholder="e.g. Friday 5-a-side"
+              maxLength={80}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
 
-        <Field label="Timezone" htmlFor="group-timezone">
-          <select
-            id="group-timezone"
-            name="timezone"
-            className="input"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-          >
-            {timezones.map((tz) => (
-              <option key={tz} value={tz}>
-                {tz}
-              </option>
-            ))}
-          </select>
-        </Field>
+          <Field label="Timezone" htmlFor="group-timezone">
+            <select
+              id="group-timezone"
+              name="timezone"
+              className="input"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+            >
+              {timezones.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </section>
 
-        <Field label="Members" htmlFor="group-members" error={errors.members}>
-          <TextArea
-            id="group-members"
-            name="members"
-            placeholder={'One name per line\nOmar\nSara\nAli'}
-            rows={6}
-            value={membersText}
-            onChange={(e) => setMembersText(e.target.value)}
-          />
-          <p className="members-meta">
-            {parsedMembers.names.length === 1
-              ? '1 member'
-              : `${parsedMembers.names.length} members`}
-          </p>
-          {parsedMembers.duplicates.length > 0 && (
-            <p className="members-meta__warning">{duplicateNamesHint(parsedMembers.duplicates)}</p>
-          )}
-        </Field>
+        <section className="form-card" aria-labelledby="create-members-heading">
+          <h2 id="create-members-heading" className="form-card__heading">Who's in it</h2>
+          <Field label="Members" htmlFor="group-members" error={errors.members}>
+            <TextArea
+              id="group-members"
+              name="members"
+              placeholder={'One name per line\nOmar\nSara\nAli'}
+              rows={6}
+              value={membersText}
+              onChange={(e) => setMembersText(e.target.value)}
+            />
+            <p className="members-meta">
+              {parsedMembers.names.length === 1
+                ? '1 member'
+                : `${parsedMembers.names.length} members`}
+            </p>
+            {parsedMembers.duplicates.length > 0 && (
+              <p className="members-meta__warning">{duplicateNamesHint(parsedMembers.duplicates)}</p>
+            )}
+          </Field>
+        </section>
 
         <Card className="event-card">
           <h2 className="event-card__heading">First session (optional)</h2>

@@ -109,3 +109,20 @@ export function formatAvgLeadTime(avgLeadHours: number | null): string | null {
   const hours = Math.round(avgLeadHours)
   return `Answers arrive ~${hours} h before start`
 }
+
+/** The pieces of a session's start, in `tz`, for the date tile: { weekday: 'Thu', day: '29',
+ * month: 'Oct', time: '9:00 PM' }. */
+export function sessionDateParts(
+  startsAtIso: string,
+  tz: string,
+): { weekday: string; day: string; month: string; time: string } {
+  const date = new Date(startsAtIso)
+  const parts = namedParts(date, tz, { weekday: 'short', day: 'numeric', month: 'short' })
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date)
+  return { weekday: parts.weekday, day: parts.day, month: parts.month, time }
+}

@@ -14,6 +14,8 @@ body,
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Keeps a keyboard-focused row clear of the fixed admin tab bar (WCAG 2.2 · 2.4.11). */
+  scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -53,15 +55,18 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
   margin: 0 0 var(--space-3);
   color: var(--ink);
 }
 
 h1 {
   font-size: var(--text-display);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
 }
 
 h2 {
@@ -115,7 +120,12 @@ svg {
 }
 
 .screen {
-  padding-block: var(--space-7);
+  padding-block: var(--space-7) var(--space-9);
+  padding-top: max(var(--space-7), env(safe-area-inset-top, 0px));
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 .visually-hidden {
@@ -133,7 +143,7 @@ svg {
 /* One visible, high-contrast focus style everywhere — this is what carries the a11y weight
    that the (deliberately quiet) --line borders don't. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -152,3 +162,41 @@ svg {
     scroll-behavior: auto !important;
   }
 }
+
+/* Entrance: content blocks rise in once, staggered ~50ms, when a screen first renders. Short and
+   small on purpose — admins switch tabs often. Uses `backwards` fill so nothing stays hidden if
+   the animation never runs, and the reduced-motion rule above collapses it to an instant. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.member-page__header,
+.who-card,
+.member-page__sessions > *,
+.hero,
+.home-preview,
+.home-admin-card,
+.create-page__intro,
+.form-card,
+.event-card,
+.week-tab > *,
+.checkin-list > *,
+.events-tab > *,
+.members-tab > *,
+.settings-tab > *,
+.insights-tab > * {
+  animation: rise-in var(--duration-enter) var(--ease-out) backwards;
+}
+
+:is(.member-page__sessions, .week-tab, .checkin-list, .events-tab, .members-tab, .settings-tab, .insights-tab) > :nth-child(2) { animation-delay: 50ms; }
+:is(.member-page__sessions, .week-tab, .checkin-list, .events-tab, .members-tab, .settings-tab, .insights-tab) > :nth-child(3) { animation-delay: 100ms; }
+:is(.member-page__sessions, .week-tab, .checkin-list, .events-tab, .members-tab, .settings-tab, .insights-tab) > :nth-child(n + 4) { animation-delay: 150ms; }
+.who-card,
+.home-preview,
+.form-card:nth-of-type(2) { animation-delay: 60ms; }
+.member-page__sessions > :first-child,
+.home-admin-card,
+.event-card { animation-delay: 120ms; }

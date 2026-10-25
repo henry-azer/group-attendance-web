@@ -2,6 +2,7 @@
 // selection (localStorage) and passes the resolved id down, and renders the visible "Who are you?"
 // label this radiogroup is associated with via aria-labelledby.
 import { useRef } from 'react'
+import { Avatar } from '../ui/index.ts'
 
 export interface NamePickerMember {
   id: string
@@ -75,7 +76,8 @@ export function NamePicker({ members, selectedId, onSelect, labelId }: NamePicke
           onClick={() => onSelect(member.id)}
           onKeyDown={(e) => handleKeyDown(e, index)}
         >
-          {member.name}
+          <Avatar name={member.name} size="sm" />
+          <span className="name-picker__name">{member.name}</span>
         </button>
       ))}
     </div>
