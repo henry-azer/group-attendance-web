@@ -109,14 +109,26 @@ do $$
 declare g public.groups; adm text := current_setting('t.admin');
 begin
   select * into g from public.groups where share_code = current_setting('t.share');
-  perform pg_temp.ok(g.admin_code_hash = encode(extensions.digest(adm, 'sha256'), 'hex'), 'admin code stored as sha256 hex');
-  perform pg_temp.ok(position(adm in row_to_json(g)::text) = 0, 'plain admin code not stored in groups');
+  perform pg_temp.ok(g.admin_code = adm, 'admin code stored plain');
+  perform pg_temp.ok(g.admin_code_hash is null, 'new groups store no admin code hash');
   perform pg_temp.ok(not exists (select 1 from public.members m where m.group_id = g.id and position(adm in row_to_json(m)::text) > 0),
                         'plain admin code not stored in members');
   perform set_config('t.gid', g.id::text, true);
   -- codes are case/lookalike tolerant
   perform pg_temp.ok(public.get_group_public(lower(g.share_code))->>'name' = 'Friday football', 'share code lookup is case-insensitive');
   perform pg_temp.ok(public.admin_get_group(lower(adm))->>'share_code' = g.share_code, 'admin lookup returns share code');
+end $$;
+
+-- legacy hashed admin code converts to plain on first use
+do $$
+declare g public.groups; legacy text := '7K3P9QZM2XVB4N6R';
+begin
+  insert into public.groups (name, timezone, share_code, admin_code_hash)
+  values ('Legacy', 'UTC', 'LEGACY0001', encode(extensions.digest(legacy, 'sha256'), 'hex'));
+  perform pg_temp.ok(public.admin_get_group(lower(legacy))->>'name' = 'Legacy', 'legacy hashed code still opens the group');
+  select * into g from public.groups where share_code = 'LEGACY0001';
+  perform pg_temp.ok(g.admin_code = legacy and g.admin_code_hash is null, 'legacy code converted to plain, hash cleared');
+  perform pg_temp.ok(public.admin_get_group(legacy)->>'name' = 'Legacy', 'converted code opens the group');
 end $$;
 
 -- ---------------------------------------------------------------------------
